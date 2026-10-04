@@ -38,8 +38,8 @@ body {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 16px;
-  padding-top: calc(16px + env(safe-area-inset-top));
+  padding: 11.5px 16px;
+  padding-top: calc(11.5px + env(safe-area-inset-top));
   padding-left: calc(16px + env(safe-area-inset-left));
   padding-right: calc(16px + env(safe-area-inset-right));
   background: var(--surface);
@@ -47,7 +47,7 @@ body {
 }
 
 .topbar h1 {
-  font-size: 1.15rem;
+  font-size: 1.035rem;
   margin: 0;
   flex: 1;
   overflow-wrap: anywhere;
@@ -56,7 +56,7 @@ body {
 .back-link {
   color: var(--text);
   text-decoration: none;
-  font-size: 1.4rem;
+  font-size: 1.26rem;
   line-height: 1;
   padding: 4px 8px;
   margin: -4px -8px;
@@ -69,7 +69,7 @@ body {
 
 .title-input {
   width: 100%;
-  font-size: 1.15rem;
+  font-size: 1.035rem;
   font-family: inherit;
   font-weight: inherit;
   background: var(--surface-alt);
@@ -84,7 +84,7 @@ body {
   background: none;
   border: none;
   color: var(--text-dim);
-  font-size: 1.2rem;
+  font-size: 1.08rem;
   line-height: 1;
   padding: 4px 8px;
   margin: -4px -8px;
@@ -322,7 +322,7 @@ body {
 /* Chibi-style win/lose rubber stamps */
 .stamp {
   position: absolute;
-  top: 4px;
+  top: 2px;
   font-size: 0.6rem;
   font-weight: 800;
   letter-spacing: 0.02em;
@@ -331,7 +331,7 @@ body {
   border: 2px solid currentColor;
   border-radius: 6px;
   background: var(--surface);
-  transform: rotate(-14deg);
+  transform: rotate(-14deg) scale(0.8);
   display: none;
   pointer-events: none;
   white-space: nowrap;
@@ -339,11 +339,11 @@ body {
 }
 
 .team-left .stamp {
-  left: 4px;
+  left: -2px;
 }
 
 .team-right .stamp {
-  right: 4px;
+  right: -2px;
 }
 
 .stamp-win {
@@ -374,8 +374,8 @@ body {
   position: fixed;
   right: 20px;
   bottom: calc(24px + env(safe-area-inset-bottom));
-  width: 60px;
-  height: 60px;
+  width: 51px;
+  height: 51px;
   border-radius: 50%;
   background: var(--accent);
   color: #fff;
@@ -399,8 +399,8 @@ body {
 
 .fab-plus {
   position: relative;
-  width: 22px;
-  height: 22px;
+  width: 19px;
+  height: 19px;
 }
 
 .fab-plus::before,
@@ -435,7 +435,7 @@ body {
 }
 
 .fab-undo-icon {
-  font-size: 2rem;
+  font-size: 1.7rem;
   line-height: 1;
 }
 
@@ -453,7 +453,7 @@ body {
 }
 
 .fab-center-icon {
-  font-size: 2rem;
+  font-size: 1.7rem;
   line-height: 1;
 }
 
@@ -1099,7 +1099,7 @@ body {
 
 /* Share Player Game List link: sits just above the add (+) button */
 .fab-share {
-  bottom: calc(24px + 60px + 16px + env(safe-area-inset-bottom));
+  bottom: calc(24px + 51px + 16px + env(safe-area-inset-bottom));
   background: var(--surface-alt);
   border: 1px solid var(--border);
   cursor: pointer;
@@ -1110,7 +1110,7 @@ body {
 }
 
 .fab-share-icon {
-  font-size: 1.6rem;
+  font-size: 1.36rem;
   line-height: 1;
 }
 
@@ -1121,7 +1121,7 @@ body {
   bottom: calc(24px + env(safe-area-inset-bottom));
   transform: translateX(-50%);
   z-index: 15;
-  padding: 16px 32px;
+  padding: 13.5px 27px;
   border-radius: 999px;
   background: var(--accent);
   color: #fff;
@@ -1211,7 +1211,7 @@ body {
 
 /* Thêm Set page: player boxes 15% shorter and every text one size smaller */
 .game-form-page .topbar h1 {
-  font-size: 1.05rem;
+  font-size: 0.945rem;
 }
 
 .game-form-page .team-block h3 {
@@ -1259,7 +1259,7 @@ body {
    boxes 10% shorter (popups such as Kết Ngày keep their size). */
 .game-list-page .topbar h1,
 .game-list-page .title-input {
-  font-size: 1.05rem;
+  font-size: 0.945rem;
 }
 
 .game-list-page .roster-button {
@@ -1302,7 +1302,7 @@ body {
 }
 
 .game-list-page .fab-text {
-  font-size: 0.95rem;
+  font-size: 0.81rem;
 }
 
 .game-list-page .page-loading {
