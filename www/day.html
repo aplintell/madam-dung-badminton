@@ -673,7 +673,7 @@
             lines.push(shareLabel + shareSeparator + formatMoney(amount) + ' 💵');
           }
 
-          addSummaryLine([SHUTTLECOCK_ICON, '/', COURT_ICON, '/', WATER_ICON], 'Cầu + Sân + Nước', data.totalPrice, ' = '); // shuttlecock / court / water
+          addSummaryLine([SHUTTLECOCK_ICON, COURT_ICON, WATER_ICON], 'Cầu + Sân + Nước', data.totalPrice, ' = '); // shuttlecock / court / water
           addSummaryLine('Thu VL', 'Đã Thu Vãng Lai', data.guestPaidTotal, ' = ');
           addSummaryLine('Phát Sinh', 'Phát Sinh', data.extraCost, ' = ');
           addSummaryLine('Độ/Set', 'Nước Độ / Set', data.waterRate, ': ');
