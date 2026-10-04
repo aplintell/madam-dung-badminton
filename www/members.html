@@ -59,7 +59,9 @@
           <thead>
             <tr>
               <th scope="col" class="col-name">Tên</th>
-              <th scope="col" class="col-num">Thứ</th>
+              <th scope="col" class="col-day">Thứ 2</th>
+              <th scope="col" class="col-day">Thứ 4</th>
+              <th scope="col" class="col-day">Thứ 6</th>
               <th scope="col" class="col-num">Buổi</th>
               <th scope="col" class="col-num col-total">💵</th>
             </tr>
@@ -592,12 +594,17 @@
 
       feeBody.innerHTML = '';
       data.members.forEach(function (m) {
+        // One column per member weekday with a green check where the member plays, as in the list.
+        var dayCells = Members.WEEKDAYS.map(function (d) {
+          var plays = m.weekdays.indexOf(d) !== -1;
+          return ['td', 'col-day' + (plays ? ' is-on' : ''), plays ? '✓' : ''];
+        });
         feeBody.appendChild(buildRow([
-          ['th', 'col-name', m.name],
-          ['td', 'col-num', m.weekdays.join(', ')],
+          ['th', 'col-name', m.name]
+        ].concat(dayCells, [
           ['td', 'col-num', String(m.sessions)],
           ['td', 'col-num col-total', formatMoney(m.amount)]
-        ]));
+        ])));
       });
 
       feeForm.hidden = true;

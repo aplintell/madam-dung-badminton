@@ -1592,3 +1592,21 @@ body {
   margin: 10px 0 0;
   color: var(--lose);
 }
+
+/* Chi Phí Thành Viên Cố Định: label as big as the number in its box */
+#feeModal .form-group label {
+  font-size: 0.89rem;
+}
+
+/* Chi Phí members table: Thứ 2 / Thứ 4 / Thứ 6 columns with a green check, like the members list */
+.member-fee-table .col-day {
+  text-align: center;
+  width: 13%;
+  padding-left: 2px;
+  padding-right: 2px;
+}
+
+.member-fee-table tbody td.col-day.is-on {
+  color: var(--win);
+  font-weight: 800;
+}
