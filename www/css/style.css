@@ -47,7 +47,7 @@ body {
 }
 
 .topbar h1 {
-  font-size: 1.035rem;
+  font-size: 0.945rem;
   margin: 0;
   flex: 1;
   overflow-wrap: anywhere;
@@ -69,7 +69,7 @@ body {
 
 .title-input {
   width: 100%;
-  font-size: 1.035rem;
+  font-size: 0.945rem;
   font-family: inherit;
   font-weight: inherit;
   background: var(--surface-alt);
@@ -640,7 +640,7 @@ body {
 
 #endDayModal .form-group label {
   color: var(--text);
-  font-size: 0.95rem;
+  font-size: 0.945rem;
 }
 
 #endDayModal .field-error {
@@ -1312,11 +1312,13 @@ body {
 /* Thành Viên Cố Định list: text two sizes smaller */
 .member-row-content {
   font-size: 0.81rem;
+  padding-top: 11px;
+  padding-bottom: 11px;
 }
 
 /* Kết Ngày / Tính Tiền: title and summary (heading area) two sizes smaller */
 #endDayModal .modal-card h2 {
-  font-size: 0.97rem;
+  font-size: 0.945rem;
 }
 
 #endDayModal .settle-line {
@@ -1325,7 +1327,7 @@ body {
 
 /* Chi Phí Thành Viên Cố Định: every text two sizes smaller */
 #feeModal .modal-card h2 {
-  font-size: 0.97rem;
+  font-size: 0.945rem;
 }
 
 #feeModal .settle-line {
@@ -1351,4 +1353,65 @@ body {
 #feeModal .primary-button,
 #feeModal .secondary-button {
   font-size: 0.81rem;
+}
+
+/* Kết Ngày / Tính Tiền: player names in the table the same size as the summary lines above it */
+#endDayModal .settle-table tbody .col-name {
+  font-size: 0.83rem;
+}
+
+/* No text anywhere is bigger than the page header (15.12px, as on the Game List). Icons and
+   symbols (back arrow, pencil, emoji on buttons and cards) keep their size. */
+.modal-card h2,
+.login-card h2,
+.primary-button,
+.secondary-button,
+.modal-card input[type="number"],
+.modal-card input[type="month"],
+.modal-card input[type="date"],
+#endDayModal .primary-button,
+#endDayModal .secondary-button,
+.login-card input[type="password"],
+.guest-form input[type="text"],
+.roster-empty,
+.loading-overlay p,
+.day-card .day-date,
+.share-game-header,
+.settle-line,
+.empty-state,
+.game-row-bg,
+.modal-card .form-group input[type="text"],
+.weekday-choice span,
+.page-loading {
+  font-size: 0.945rem;
+}
+
+#endDayModal .settle-line,
+#feeModal .settle-line {
+  font-size: 0.83rem;
+}
+
+#feeModal .modal-card input[type="number"] {
+  font-size: 0.89rem;
+}
+
+#feeModal .primary-button,
+#feeModal .secondary-button {
+  font-size: 0.81rem;
+}
+
+.game-form-page .primary-button {
+  font-size: 0.9rem;
+}
+
+.game-list-page .fab-text {
+  font-size: 0.81rem;
+}
+
+.game-list-page .empty-state {
+  font-size: 0.9rem;
+}
+
+.game-list-page .game-row-bg {
+  font-size: 0.85rem;
 }
