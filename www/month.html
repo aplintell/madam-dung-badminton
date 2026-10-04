@@ -26,14 +26,14 @@
         <span class="option-icon" aria-hidden="true">👥</span>
         <span>
           <span class="day-date">Thành Viên Cố Định</span>
-          <span id="membersMeta" class="day-meta"></span>
+          <span id="membersMeta" class="day-meta"><span class="inline-spinner" aria-hidden="true"></span></span>
         </span>
       </a>
       <a id="daysLink" class="day-card option-card" href="#">
         <span class="option-icon" aria-hidden="true">🏸</span>
         <span>
           <span class="day-date">Ngày Chơi Cầu</span>
-          <span id="daysMeta" class="day-meta"></span>
+          <span id="daysMeta" class="day-meta"><span class="inline-spinner" aria-hidden="true"></span></span>
         </span>
       </a>
     </div>
@@ -60,6 +60,9 @@
     Promise.all([Members.findAllForMonth(monthKey), GameDays.findForMonth(monthKey)]).then(function (results) {
       document.getElementById('membersMeta').textContent = results[0].length + ' Thành Viên';
       document.getElementById('daysMeta').textContent = results[1].length + ' Ngày Chơi';
+    }, function () {
+      document.getElementById('membersMeta').textContent = '';
+      document.getElementById('daysMeta').textContent = '';
     });
   </script>
 </body>

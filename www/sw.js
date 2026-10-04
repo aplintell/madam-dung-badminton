@@ -1,5 +1,5 @@
 // Bump when files change so phones pick up the new version.
-var CACHE = 'madam-dung-v12';
+var CACHE = 'madam-dung-v13';
 
 var FILES = [
   './',
@@ -54,14 +54,22 @@ self.addEventListener('activate', function (event) {
   );
 });
 
+function sameOrigin(request) {
+  return new URL(request.url).origin === self.location.origin;
+}
+
 // Network first so updates show up straight away when online; the cache covers offline use.
+// The app's own files are revalidated on every load ("no-cache" still uses the copy when the
+// server says it hasn't changed), so a new version shows up on the next open.
 // Pages are opened with ?id=... / ?month=..., so match them ignoring the query string.
 self.addEventListener('fetch', function (event) {
   if (event.request.method !== 'GET') {
     return;
   }
   event.respondWith(
-    fetch(event.request).then(function (response) {
+    // A page-navigation request can't be given other options, so the app's files are fetched
+    // through a fresh request for the same address.
+    fetch(sameOrigin(event.request) ? new Request(event.request.url, { cache: 'no-cache', credentials: 'same-origin' }) : event.request).then(function (response) {
       if (response.ok && new URL(event.request.url).origin === self.location.origin) {
         var copy = response.clone();
         caches.open(CACHE).then(function (cache) {
