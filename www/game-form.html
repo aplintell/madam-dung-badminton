@@ -25,8 +25,8 @@
 
       <p id="globalError" class="field-error" hidden></p>
 
-      <div class="team-block">
-        <h3>Team 1</h3>
+      <div class="team-block" id="team1Block">
+        <h3 id="team1Title">Team 1</h3>
         <div class="form-group">
           <label for="team1Player1">Lông Thủ 1</label>
           <div class="player-combo">
@@ -45,8 +45,8 @@
         </div>
       </div>
 
-      <div class="team-block">
-        <h3>Team 2</h3>
+      <div class="team-block" id="team2Block">
+        <h3 id="team2Title">Team 2</h3>
         <div class="form-group">
           <label for="team2Player1">Lông Thủ 1</label>
           <div class="player-combo">
@@ -69,6 +69,11 @@
     </form>
   </main>
 
+  <div id="saveLoading" class="loading-overlay" role="status" aria-live="polite" hidden>
+    <div class="loading-spinner" aria-hidden="true"></div>
+    <p>Đang lưu...</p>
+  </div>
+
   <script src="js/pwa.js"></script>
   <script src="js/vendor/firebase-app-compat.js"></script>
   <script src="js/vendor/firebase-auth-compat.js"></script>
@@ -86,7 +91,17 @@
     var dayPage = (fromPlayer ? 'player-day.html?id=' : 'day.html?id=') + dayId;
     document.getElementById('backLink').setAttribute('href', dayPage);
 
+    // Players enter a set once it's finished: the first team is the winner, coloured like a
+    // winning team in the list, the second like a losing one.
+    if (fromPlayer) {
+      document.getElementById('team1Title').textContent = 'Team Thắng';
+      document.getElementById('team2Title').textContent = 'Team Thua';
+      document.getElementById('team1Block').classList.add('team-block-win');
+      document.getElementById('team2Block').classList.add('team-block-lose');
+    }
+
     var form = document.getElementById('newGameForm');
+    var saveLoading = document.getElementById('saveLoading');
     var globalError = document.getElementById('globalError');
     var fieldIds = ['team1Player1', 'team1Player2', 'team2Player1', 'team2Player2'];
 
@@ -244,11 +259,20 @@
         return;
       }
 
+      // Covers the screen until the page changes, so the set can't be submitted twice.
+      if (!saveLoading.hidden) {
+        return;
+      }
+      saveLoading.hidden = false;
       Games.addGame(dayId, values.team1Player1, values.team1Player2, values.team2Player1, values.team2Player2)
+        .then(function (game) {
+          return fromPlayer ? Games.setWinner(game, 1) : null;
+        })
         .then(function () {
           window.location.href = dayPage;
         })
         .catch(function (err) {
+          saveLoading.hidden = true;
           globalError.textContent = err.message;
           globalError.hidden = false;
         });

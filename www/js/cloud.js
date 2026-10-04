@@ -81,13 +81,21 @@
       (wasSignedInBefore() ? '<p class="login-note">Mật khẩu nhóm đã thay đổi. Vui lòng nhập mật khẩu mới.</p>' : '') +
       '<div class="form-group">' +
       '<label for="groupPassword">Mật khẩu nhóm</label>' +
-      '<input type="password" id="groupPassword" autocomplete="current-password" enterkeyhint="go">' +
+      // The group password is digits only, so phones show just the number pad.
+      '<input type="password" id="groupPassword" inputmode="numeric" pattern="[0-9]*" autocomplete="current-password" enterkeyhint="go">' +
       '</div>' +
       '<p class="field-error" hidden></p>' +
       '<button type="submit" class="primary-button">Đăng nhập</button>' +
       '</form>';
     var form = loginEl.querySelector('form');
     var input = loginEl.querySelector('input');
+    // Drop anything that isn't a digit (e.g. pasted or autofilled text).
+    input.addEventListener('input', function () {
+      var digits = input.value.replace(/\D/g, '');
+      if (digits !== input.value) {
+        input.value = digits;
+      }
+    });
     var errorEl = loginEl.querySelector('.field-error');
     var button = loginEl.querySelector('button');
     form.addEventListener('submit', function (e) {

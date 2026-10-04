@@ -1113,3 +1113,44 @@ body {
   font-size: 1.6rem;
   line-height: 1;
 }
+
+/* Player Game List: "Thêm Set" text button pinned to the bottom middle */
+.fab-text {
+  position: fixed;
+  left: 50%;
+  bottom: calc(24px + env(safe-area-inset-bottom));
+  transform: translateX(-50%);
+  z-index: 15;
+  padding: 16px 32px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 1.05rem;
+  font-weight: 700;
+  text-decoration: none;
+  white-space: nowrap;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+}
+
+.fab-text:active {
+  opacity: 0.85;
+}
+
+/* Thêm Set from the Player Game List: Team Thắng / Team Thua coloured like the list's winner / loser */
+.team-block-win {
+  background: var(--win-bg);
+  border-color: var(--win);
+}
+
+.team-block-win h3 {
+  color: var(--win);
+}
+
+.team-block-lose {
+  background: var(--lose-bg);
+  border-color: var(--lose);
+}
+
+.team-block-lose h3 {
+  color: var(--lose);
+}
