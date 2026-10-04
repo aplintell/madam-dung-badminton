@@ -1263,7 +1263,9 @@ body {
 }
 
 .game-list-page .roster-button {
-  font-size: 0.9rem;
+  font-size: 0.75rem;
+  padding-top: 11px;
+  padding-bottom: 11px;
 }
 
 .game-list-page .empty-state {
@@ -1271,13 +1273,16 @@ body {
 }
 
 .game-list-page .team {
-  font-size: 0.9rem;
-  padding-top: 7.5px;
-  padding-bottom: 7.5px;
+  font-size: 0.82rem;
+  padding-top: 7px;
+  padding-bottom: 7px;
 }
 
 .game-list-page .vs-label {
   font-size: 0.72rem;
+  padding-top: 5px;
+  padding-bottom: 5px;
+  gap: 3px;
 }
 
 .game-list-page .vs-time {
