@@ -21,6 +21,11 @@
   </header>
 
   <main class="container">
+    <div id="pageLoading" class="page-loading" role="status" aria-live="polite">
+      <div class="loading-spinner" aria-hidden="true"></div>
+      <p>Đang tải...</p>
+    </div>
+
     <div id="emptyState" class="empty-state" hidden>
       <p>Chưa có Ngày Chơi trong tháng này</p>
     </div>
@@ -100,7 +105,14 @@
           dayListEl.appendChild(row);
           bindDaySwipe(row);
         });
+      }).then(hidePageLoading, function (err) {
+        hidePageLoading();
+        alert((err && err.message) || 'Không tải được. Vui lòng thử lại.');
       });
+    }
+
+    function hidePageLoading() {
+      document.getElementById('pageLoading').hidden = true;
     }
 
     // playerCount: today's TV Cố Định (Chơi) + TV Vãng Lai.

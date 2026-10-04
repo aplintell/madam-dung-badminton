@@ -20,6 +20,11 @@
   </header>
 
   <main class="container">
+    <div id="pageLoading" class="page-loading" role="status" aria-live="polite">
+      <div class="loading-spinner" aria-hidden="true"></div>
+      <p>Đang tải...</p>
+    </div>
+
     <div id="emptyState" class="empty-state" hidden>
       <p>Chưa có Tháng nào.</p>
       <p>Bấm dấu + góc dưới màn hình để thêm Tháng mới.</p>
@@ -93,7 +98,14 @@
           monthListEl.appendChild(row);
           bindMonthSwipe(row, month);
         });
+      }).then(hidePageLoading, function (err) {
+        hidePageLoading();
+        alert((err && err.message) || 'Không tải được. Vui lòng thử lại.');
       });
+    }
+
+    function hidePageLoading() {
+      document.getElementById('pageLoading').hidden = true;
     }
 
     function buildMonthRow(month, memberCount, dayCount) {

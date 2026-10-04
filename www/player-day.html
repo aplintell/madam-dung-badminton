@@ -18,10 +18,15 @@
   <!-- Player Game List: the day's sets for players opening a shared link. They can mark winners
        and add sets, but there is no way from here to any other page. -->
   <header class="topbar">
-    <h1 id="dayTitle">Loading...</h1>
+    <h1 id="dayTitle">Đang tải...</h1>
   </header>
 
   <main class="container">
+    <div id="pageLoading" class="page-loading" role="status" aria-live="polite">
+      <div class="loading-spinner" aria-hidden="true"></div>
+      <p>Đang tải...</p>
+    </div>
+
     <div id="emptyState" class="empty-state" hidden>
       <p>Chưa có Set nào.</p>
       <p>Bấm nút Thêm Set bên dưới để thêm Set mới.</p>
@@ -345,6 +350,7 @@
         pendingGames = games;
         return;
       }
+      document.getElementById('pageLoading').hidden = true;
       var active = games.filter(function (g) {
         return !g.deletedAt;
       });
@@ -381,6 +387,7 @@
         }
       })
       .catch(function (err) {
+        document.getElementById('pageLoading').hidden = true;
         titleEl.textContent = 'Không tìm thấy Ngày Chơi';
         alert(err.message || 'Could not load this day.');
       });

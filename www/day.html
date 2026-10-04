@@ -18,7 +18,7 @@
   <header class="topbar">
     <a id="backLink" class="back-link" href="index.html">&#8592;</a>
     <div class="title-wrap">
-      <h1 id="dayTitle">Loading...</h1>
+      <h1 id="dayTitle">Đang tải...</h1>
       <input id="dayTitleInput" class="title-input" type="text" hidden>
     </div>
     <button id="renameBtn" class="icon-button" type="button" aria-label="Rename session">&#9998;</button>
@@ -28,6 +28,11 @@
     <div class="roster-bar">
       <button id="membersBtn" class="secondary-button roster-button" type="button">TV Cố Định</button>
       <button id="guestsBtn" class="secondary-button roster-button" type="button">TV Vãng Lai</button>
+    </div>
+
+    <div id="pageLoading" class="page-loading" role="status" aria-live="polite">
+      <div class="loading-spinner" aria-hidden="true"></div>
+      <p>Đang tải...</p>
     </div>
 
     <div id="emptyState" class="empty-state" hidden>
@@ -826,6 +831,7 @@
         })
         .then(function (games) {
           renderGameList(games);
+          document.getElementById('pageLoading').hidden = true;
           return Games.hasDeletedGames(dayId);
         })
         .then(function (hasDeleted) {
@@ -833,6 +839,7 @@
           restoreModalStateAfterReload();
         })
         .catch(function (err) {
+          document.getElementById('pageLoading').hidden = true;
           alert(err.message || 'Could not load this day.');
         });
     }
