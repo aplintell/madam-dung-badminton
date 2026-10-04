@@ -75,6 +75,7 @@
     <p>Đang lưu...</p>
   </div>
 
+  <script src="js/version.js"></script>
   <script src="js/pwa.js"></script>
   <script src="js/vendor/firebase-app-compat.js"></script>
   <script src="js/vendor/firebase-auth-compat.js"></script>
@@ -259,7 +260,7 @@
       saveLoading.hidden = false;
       Games.addGame(dayId, values.team1Player1, values.team1Player2, values.team2Player1, values.team2Player2)
         .then(function (game) {
-          return fromPlayer ? Games.setWinner(game, 1) : null;
+          return Games.setWinner(game, 1); // Team Thắng is the first team
         })
         .then(function () {
           window.location.href = dayPage;

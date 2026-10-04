@@ -1247,3 +1247,10 @@ body {
 .game-form-page .primary-button {
   font-size: 0.9rem;
 }
+
+.app-version {
+  margin: 32px 0 0;
+  text-align: center;
+  font-size: 0.75rem;
+  color: var(--text-dim);
+}

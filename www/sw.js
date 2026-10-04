@@ -1,5 +1,6 @@
-// Bump when files change so phones pick up the new version.
-var CACHE = 'madam-dung-v14';
+importScripts('js/version.js');
+// Named after the app version (js/version.js), so a new version gets a fresh cache.
+var CACHE = 'madam-dung-v' + self.APP_VERSION;
 
 var FILES = [
   './',
@@ -19,6 +20,7 @@ var FILES = [
   'js/share-image.js',
   'js/html2canvas.min.js',
   'js/pwa.js',
+  'js/version.js',
   'js/firebase-config.js',
   'js/cloud.js',
   'js/vendor/firebase-app-compat.js',
