@@ -1505,3 +1505,22 @@ body {
   vertical-align: -0.5em;
   margin: 0 1px;
 }
+
+/* Kết Ngày / Tính Tiền form: text two sizes smaller (title unchanged), boxes and buttons 10% shorter */
+#endDayForm .form-group label,
+#endDayError {
+  font-size: 0.765rem;
+}
+
+#endDayForm input[type="number"] {
+  font-size: 0.765rem;
+  padding-top: 13px;
+  padding-bottom: 13px;
+}
+
+#endDayModal .primary-button,
+#endDayModal .secondary-button {
+  font-size: 0.765rem;
+  padding-top: 13px;
+  padding-bottom: 13px;
+}
