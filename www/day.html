@@ -631,18 +631,32 @@
           settleSummaryEl.innerHTML = '';
           var lines = [];
 
-          function addSummaryLine(text) {
-            var p = document.createElement('p');
-            p.className = 'settle-line';
-            p.textContent = text;
-            settleSummaryEl.appendChild(p);
-            lines.push(text);
+          // The heading area is a small two-column table (what | amount) above the players table.
+          var summaryTable = document.createElement('table');
+          summaryTable.className = 'settle-table summary-table';
+          var summaryBody = document.createElement('tbody');
+          summaryTable.appendChild(summaryBody);
+          settleSummaryEl.appendChild(summaryTable);
+
+          function addSummaryLine(label, amount, shareSeparator) {
+            var tr = document.createElement('tr');
+            var th = document.createElement('th');
+            th.scope = 'row';
+            th.className = 'col-name';
+            th.textContent = label;
+            var td = document.createElement('td');
+            td.className = 'col-num';
+            td.textContent = formatMoney(amount) + ' 💵';
+            tr.appendChild(th);
+            tr.appendChild(td);
+            summaryBody.appendChild(tr);
+            lines.push(label + shareSeparator + formatMoney(amount) + ' 💵');
           }
 
-          addSummaryLine('Cầu + Sân + Nước = ' + formatMoney(data.totalPrice) + ' 💵');
-          addSummaryLine('Đã Thu Vãng Lai = ' + formatMoney(data.guestPaidTotal) + ' 💵');
-          addSummaryLine('Phát Sinh = ' + formatMoney(data.extraCost) + ' 💵');
-          addSummaryLine('Nước Độ / Set: ' + formatMoney(data.waterRate) + ' 💵');
+          addSummaryLine('Cầu + Sân + Nước', data.totalPrice, ' = ');
+          addSummaryLine('Đã Thu Vãng Lai', data.guestPaidTotal, ' = ');
+          addSummaryLine('Phát Sinh', data.extraCost, ' = ');
+          addSummaryLine('Nước Độ / Set', data.waterRate, ': ');
 
           function addCell(tr, tag, className, text) {
             var cell = document.createElement(tag);

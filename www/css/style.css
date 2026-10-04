@@ -1450,3 +1450,24 @@ body {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+/* Kết Ngày / Tính Tiền heading area as a table: what | amount, same text size as before */
+#endDayModal .summary-table {
+  margin: 0;
+  font-size: 0.83rem;
+}
+
+#endDayModal .summary-table tbody .col-name {
+  font-size: 0.83rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+#endDayModal .summary-table td {
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+#endDayModal .summary-table tbody td:nth-child(2) {
+  color: var(--text);
+}
