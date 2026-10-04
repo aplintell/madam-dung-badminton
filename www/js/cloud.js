@@ -21,8 +21,29 @@
   var WRITE_WAIT_MS = 2000;
 
   // ---- Group login ----
+  // A phone logs in once and stays logged in. Firebase only ends that login when the group
+  // password is changed, so if a phone that was logged in sees the login screen again, say why.
 
+  var SIGNED_IN_KEY = 'madamDung.signedIn';
   var loginEl = null;
+
+  function rememberSignedIn(value) {
+    try {
+      if (value) {
+        localStorage.setItem(SIGNED_IN_KEY, '1');
+      } else {
+        localStorage.removeItem(SIGNED_IN_KEY);
+      }
+    } catch (e) {}
+  }
+
+  function wasSignedInBefore() {
+    try {
+      return localStorage.getItem(SIGNED_IN_KEY) === '1';
+    } catch (e) {
+      return false;
+    }
+  }
 
   function showLogin() {
     if (loginEl) {
@@ -34,6 +55,7 @@
     loginEl.innerHTML =
       '<form class="login-card" novalidate>' +
       '<h2>Madam Dung Badminton</h2>' +
+      (wasSignedInBefore() ? '<p class="login-note">Mật khẩu nhóm đã thay đổi. Vui lòng nhập mật khẩu mới.</p>' : '') +
       '<div class="form-group">' +
       '<label for="groupPassword">Mật khẩu nhóm</label>' +
       '<input type="password" id="groupPassword" autocomplete="current-password" enterkeyhint="go">' +
@@ -74,6 +96,7 @@
     auth.onAuthStateChanged(function (user) {
       if (user) {
         wasSignedIn = true;
+        rememberSignedIn(true);
         if (loginEl) {
           loginEl.hidden = true;
         }
@@ -198,9 +221,6 @@
     get: get,
     getAll: getAll,
     getAllByIndex: getAllByIndex,
-    remove: remove,
-    signOut: function () {
-      return auth.signOut();
-    }
+    remove: remove
   };
 })(window);

@@ -1089,3 +1089,10 @@ body {
   border-radius: 10px;
   color: var(--text);
 }
+
+.login-note {
+  margin: -8px 0 16px;
+  color: var(--text-dim);
+  font-size: 0.9rem;
+  text-align: center;
+}
