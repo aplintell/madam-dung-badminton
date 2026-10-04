@@ -1223,8 +1223,8 @@ body {
 }
 
 .game-form-page .form-group input[type="text"] {
-  padding-top: 11.5px;
-  padding-bottom: 11.5px;
+  padding-top: 10px;
+  padding-bottom: 10px;
   font-size: 0.9rem;
 }
 
@@ -1253,4 +1253,53 @@ body {
   text-align: center;
   font-size: 0.75rem;
   color: var(--text-dim);
+}
+
+/* Game List / Player Game List: every text on the list screen one size smaller and the team
+   boxes 10% shorter (popups such as Kết Ngày keep their size). */
+.game-list-page .topbar h1,
+.game-list-page .title-input {
+  font-size: 1.05rem;
+}
+
+.game-list-page .roster-button {
+  font-size: 0.9rem;
+}
+
+.game-list-page .empty-state {
+  font-size: 0.9rem;
+}
+
+.game-list-page .team {
+  font-size: 0.9rem;
+  padding-top: 7.5px;
+  padding-bottom: 7.5px;
+}
+
+.game-list-page .vs-label {
+  font-size: 0.72rem;
+}
+
+.game-list-page .vs-time {
+  font-size: 0.6rem;
+}
+
+.game-list-page .stamp {
+  font-size: 0.55rem;
+}
+
+.game-list-page .game-hint {
+  font-size: 0.7rem;
+}
+
+.game-list-page .game-row-bg {
+  font-size: 0.85rem;
+}
+
+.game-list-page .fab-text {
+  font-size: 0.95rem;
+}
+
+.game-list-page .page-loading {
+  font-size: 0.9rem;
 }
