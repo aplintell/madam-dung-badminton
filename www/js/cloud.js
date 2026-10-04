@@ -55,6 +55,15 @@
   // back there. Opening a link for another day moves it to that day.
 
   var PLAYER_DAY_KEY = 'madamDung.playerDayId';
+
+  // A random id for this phone, kept for good. Games remember which phone added them, so a
+  // player can only change or delete their own sets on the Player Game List.
+  var DEVICE_ID_KEY = 'madamDung.deviceId';
+  global.DEVICE_ID = load(DEVICE_ID_KEY);
+  if (!global.DEVICE_ID) {
+    global.DEVICE_ID = Date.now().toString(36) + Math.random().toString(36).slice(2, 10);
+    store(DEVICE_ID_KEY, global.DEVICE_ID);
+  }
   var PLAYER_PAGES = ['player-day.html', 'game-form.html'];
   var pageName = window.location.pathname.split('/').pop() || 'index.html';
   var pageDayId = new URLSearchParams(window.location.search).get('id');

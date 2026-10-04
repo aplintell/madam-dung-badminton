@@ -29,7 +29,7 @@
 
     <div id="gameList" class="game-list" hidden></div>
 
-    <p id="gameHint" class="game-hint" hidden>Bấm vào đội Thắng, Bấm lại là hủy</p>
+    <p id="gameHint" class="game-hint" hidden>Set của bạn: bấm vào đội Thắng (bấm lại là hủy), vuốt sang trái hoặc phải để xóa. Bấm 2 lần vào chữ VS để nhân bản Set.</p>
   </main>
 
   <a id="addGameLink" class="fab-text" href="#">Thêm Set</a>
@@ -61,6 +61,28 @@
           playerNameById[p.id] = p.name;
         });
       });
+    }
+
+    // Players may only change or delete the sets their own phone added (or cloned).
+    function isMine(game) {
+      return !!window.DEVICE_ID && game.createdBy === window.DEVICE_ID;
+    }
+
+    var toastEl = null;
+    var toastTimer = null;
+
+    function showToast(text) {
+      if (!toastEl) {
+        toastEl = document.createElement('div');
+        toastEl.className = 'toast';
+        document.body.appendChild(toastEl);
+      }
+      toastEl.textContent = text;
+      toastEl.hidden = false;
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(function () {
+        toastEl.hidden = true;
+      }, 2000);
     }
 
     function formatTimeLabel(isoString) {
@@ -101,11 +123,19 @@
       return team;
     }
 
-    // Same row as the Game List, without the swipe-to-delete background.
+    // Same row as the Game List; only the phone's own sets get the swipe-to-delete background.
     function buildGameRowElement(game) {
       var row = document.createElement('div');
       row.className = 'game-row';
       row.setAttribute('data-game-id', String(game.id));
+
+      if (isMine(game)) {
+        var bg = document.createElement('div');
+        bg.className = 'game-row-bg';
+        bg.setAttribute('aria-hidden', 'true');
+        bg.textContent = '🗑️ Xóa';
+        row.appendChild(bg);
+      }
 
       var content = document.createElement('div');
       content.className = 'game-row-content';
@@ -131,35 +161,190 @@
       return row;
     }
 
-    // Tap a team to mark it the winner; tap the winner again to undo.
-    function bindGameRow(row) {
+    // The list redraws itself from the live listener, so actions here only save; the change
+    // then shows up on every phone, this one included.
+    function bindGameRow(row, game) {
+      var mine = isMine(game);
+
       row.querySelectorAll('.team').forEach(function (el) {
         el.addEventListener('click', function () {
-          var gameId = parseInt(row.getAttribute('data-game-id'), 10);
+          if (!mine) {
+            showToast('Chỉ người tạo Set mới sửa được');
+            return;
+          }
           var clickedTeam = parseInt(el.getAttribute('data-team'), 10);
           var newWinningTeam = el.classList.contains('winner') ? null : clickedTeam;
-
-          Games.getOrThrow(gameId)
-            .then(function (game) {
-              return Games.setWinner(game, newWinningTeam);
-            })
-            .then(function () {
-              row.querySelectorAll('.team').forEach(function (t) {
-                t.classList.remove('winner', 'loser');
-                if (newWinningTeam !== null) {
-                  var teamNumber = parseInt(t.getAttribute('data-team'), 10);
-                  t.classList.add(teamNumber === newWinningTeam ? 'winner' : 'loser');
-                }
-              });
+          row.querySelectorAll('.team').forEach(function (t) {
+            t.classList.remove('winner', 'loser');
+            if (newWinningTeam !== null) {
+              var teamNumber = parseInt(t.getAttribute('data-team'), 10);
+              t.classList.add(teamNumber === newWinningTeam ? 'winner' : 'loser');
+            }
+          });
+          Games.getOrThrow(game.id)
+            .then(function (fresh) {
+              return Games.setWinner(fresh, newWinningTeam);
             })
             .catch(function () {
               alert('Không lưu được. Vui lòng thử lại.');
             });
         });
       });
+
+      function duplicateGame() {
+        Games.getOrThrow(game.id)
+          .then(function (fresh) {
+            return Games.duplicate(fresh);
+          })
+          .then(function () {
+            showToast('Đã nhân bản Set');
+          })
+          .catch(function () {
+            alert('Không nhân bản được. Vui lòng thử lại.');
+          });
+      }
+
+      bindRowGestures(row, row.querySelector('.vs-label'), duplicateGame, mine);
     }
 
+    // Double tap on VS clones the set (any set); swiping deletes it (own sets only).
+    function bindRowGestures(row, vsLabel, onVsLabelDoubleTap, canDelete) {
+      var content = row.querySelector('.game-row-content');
+      var DELETE_THRESHOLD = 90;
+      var DOUBLE_TAP_MS = 350;
+      var pointerId = null;
+      var startX = 0;
+      var startY = 0;
+      var currentX = 0;
+      var dragging = false;
+      var moved = false;
+      var pointerDownTarget = null;
+      var lastVsTapTime = 0;
+
+      row.addEventListener('pointerdown', function (e) {
+        if (e.pointerType === 'mouse' && e.button !== 0) {
+          return;
+        }
+        dragging = true;
+        moved = false;
+        currentX = 0;
+        startX = e.clientX;
+        startY = e.clientY;
+        pointerId = e.pointerId;
+        pointerDownTarget = e.target;
+        content.style.transition = 'none';
+      });
+
+      row.addEventListener('pointermove', function (e) {
+        if (!dragging || e.pointerId !== pointerId || !canDelete) {
+          return;
+        }
+        var dx = e.clientX - startX;
+        var dy = e.clientY - startY;
+        if (!moved) {
+          if (Math.abs(dx) < 10) {
+            return;
+          }
+          if (Math.abs(dy) > Math.abs(dx)) {
+            dragging = false;
+            return;
+          }
+          moved = true;
+          try {
+            row.setPointerCapture(pointerId);
+          } catch (err) {
+            // ignore if pointer capture isn't supported for this pointer
+          }
+        }
+        currentX = dx;
+        content.style.transform = 'translateX(' + currentX + 'px)';
+        row.classList.toggle('swiping', Math.abs(currentX) > 10);
+      });
+
+      function endDrag() {
+        if (!dragging) {
+          return;
+        }
+        dragging = false;
+        content.style.transition = '';
+        if (moved) {
+          row.dataset.justDragged = '1';
+        }
+        if (canDelete && Math.abs(currentX) > DELETE_THRESHOLD) {
+          deleteRow(currentX > 0 ? 1 : -1);
+        } else {
+          content.style.transform = '';
+          row.classList.remove('swiping');
+          if (!moved && pointerDownTarget && vsLabel.contains(pointerDownTarget)) {
+            var now = Date.now();
+            if (now - lastVsTapTime < DOUBLE_TAP_MS) {
+              lastVsTapTime = 0;
+              onVsLabelDoubleTap();
+            } else {
+              lastVsTapTime = now;
+            }
+          }
+        }
+        currentX = 0;
+      }
+
+      row.addEventListener('pointerup', endDrag);
+      row.addEventListener('pointercancel', endDrag);
+
+      row.addEventListener('click', function (e) {
+        if (row.dataset.justDragged) {
+          e.stopPropagation();
+          e.preventDefault();
+          delete row.dataset.justDragged;
+        }
+      }, true);
+
+      function deleteRow(direction) {
+        var gameId = parseInt(row.getAttribute('data-game-id'), 10);
+        content.style.transition = 'transform 0.2s ease';
+        content.style.transform = 'translateX(' + (direction > 0 ? '100%' : '-100%') + ')';
+
+        Games.getOrThrow(gameId)
+          .then(function (game) {
+            return Games.delete(game);
+          })
+          .catch(function () {
+            alert('Không xóa được. Vui lòng thử lại.');
+            content.style.transform = '';
+            row.classList.remove('swiping');
+          });
+      }
+    }
+
+    // Redrawing under a finger would cancel a swipe or double tap, so updates that arrive while
+    // the list is being touched wait until the finger lifts.
+    var touching = false;
+    var pendingGames = null;
+
+    document.addEventListener('pointerdown', function () {
+      touching = true;
+    }, true);
+    ['pointerup', 'pointercancel'].forEach(function (type) {
+      document.addEventListener(type, function () {
+        touching = false;
+        if (pendingGames) {
+          // Let the row's own handlers (double tap, delete) finish first.
+          setTimeout(function () {
+            if (!touching && pendingGames) {
+              var games = pendingGames;
+              pendingGames = null;
+              renderGames(games);
+            }
+          }, 400);
+        }
+      }, true);
+    });
+
     function renderGames(games) {
+      if (touching) {
+        pendingGames = games;
+        return;
+      }
       var active = games.filter(function (g) {
         return !g.deletedAt;
       });
@@ -173,7 +358,7 @@
       active.forEach(function (game) {
         var row = buildGameRowElement(game);
         gameListEl.appendChild(row);
-        bindGameRow(row);
+        bindGameRow(row, game);
       });
     }
 

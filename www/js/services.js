@@ -828,6 +828,8 @@
           team2Player1Id: players[2].id,
           team2Player2Id: players[3].id,
           winningTeam: null,
+          // Which phone added it: on the Player Game List only that phone may change or delete it.
+          createdBy: global.DEVICE_ID || null,
           createdAt: new Date().toISOString(),
           deletedAt: null
         };
@@ -862,6 +864,7 @@
         team2Player1Id: game.team2Player1Id,
         team2Player2Id: game.team2Player2Id,
         winningTeam: null,
+        createdBy: global.DEVICE_ID || null,
         createdAt: new Date().toISOString(),
         deletedAt: null
       };

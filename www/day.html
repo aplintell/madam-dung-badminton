@@ -160,11 +160,23 @@
     // (Firebase) web version — the packaged app's data isn't online, so a link would show nothing.
     var sharePlayerLinkBtn = document.getElementById('sharePlayerLinkBtn');
     if (BadmintonDb.watchByIndex) {
+      // The group password to send along with the link lives in the group's own Firebase data
+      // (settings/share), readable only once logged in — it's never written into the app's code.
+      // Fetched up front so the share sheet still opens straight from the tap.
+      var sharePassword = null;
+      BadmintonDb.get('settings', 'share').then(function (settings) {
+        sharePassword = settings && settings.password ? settings.password : null;
+      }).catch(function () {});
+
       sharePlayerLinkBtn.hidden = false;
       sharePlayerLinkBtn.addEventListener('click', function () {
         var dayName = document.getElementById('dayTitle').textContent;
         var url = window.location.href.split('#')[0].split('?')[0].replace(/[^/]*$/, '') + 'player-day.html?id=' + dayId;
-        ShareImage.shareText('Danh sách Set ' + dayName, '🏸 Danh sách Set ' + dayName + '\n' + url);
+        var text = '🏸 Danh sách Set ' + dayName + '\n' + url;
+        if (sharePassword) {
+          text += '\npassword : ' + sharePassword;
+        }
+        ShareImage.shareText('Danh sách Set ' + dayName, text);
       });
     }
 
@@ -782,6 +794,25 @@
       return ShareImage.renderModalCard(modalCardEl, 'endDayModal', '#endDayResult .modal-actions');
     }
 
+    /** Draws the day's (not deleted) games, newest first. */
+    function renderGameList(games) {
+      gameListEl.innerHTML = '';
+      if (games.length === 0) {
+        emptyStateEl.hidden = false;
+        gameListEl.hidden = true;
+        gameHintEl.hidden = true;
+      } else {
+        emptyStateEl.hidden = true;
+        gameListEl.hidden = false;
+        gameHintEl.hidden = false;
+        games.forEach(function (game) {
+          var row = buildGameRowElement(game);
+          gameListEl.appendChild(row);
+          bindGameRow(row);
+        });
+      }
+    }
+
     function loadDay() {
       GameDays.getOrThrow(dayId)
         .then(function (day) {
@@ -794,21 +825,7 @@
           return Games.findAllForDay(dayId);
         })
         .then(function (games) {
-          gameListEl.innerHTML = '';
-          if (games.length === 0) {
-            emptyStateEl.hidden = false;
-            gameListEl.hidden = true;
-            gameHintEl.hidden = true;
-          } else {
-            emptyStateEl.hidden = true;
-            gameListEl.hidden = false;
-            gameHintEl.hidden = false;
-            games.forEach(function (game) {
-              var row = buildGameRowElement(game);
-              gameListEl.appendChild(row);
-              bindGameRow(row);
-            });
-          }
+          renderGameList(games);
           return Games.hasDeletedGames(dayId);
         })
         .then(function (hasDeleted) {
@@ -1010,6 +1027,64 @@
     });
 
     loadDay();
+
+    // ---- Auto refresh ----
+    // Sets added or results marked on other phones (e.g. players on the Player Game List) appear
+    // here without a manual refresh. A live listener notices changes, which costs far fewer
+    // Firebase reads than re-fetching every 10 seconds; the list is redrawn at most every 10
+    // seconds, only when something changed, and never while a finger is on the screen.
+    if (BadmintonDb.watchByIndex) {
+      var AUTO_REFRESH_MS = 10000;
+      var latestGames = null;
+      var shownSignature = null;
+      var touching = false;
+
+      document.addEventListener('pointerdown', function () {
+        touching = true;
+      }, true);
+      ['pointerup', 'pointercancel'].forEach(function (type) {
+        document.addEventListener(type, function () {
+          touching = false;
+        }, true);
+      });
+
+      function gamesSignature(games) {
+        return JSON.stringify(games.map(function (g) {
+          return [g.id, g.winningTeam || null, g.deletedAt || null, g.team1Player1Id, g.team1Player2Id, g.team2Player1Id, g.team2Player2Id];
+        }).sort());
+      }
+
+      BadmintonDb.watchByIndex('games', 'gameDayId', dayId, function (games) {
+        latestGames = games;
+        if (shownSignature === null) {
+          shownSignature = gamesSignature(games); // what loadDay() just drew
+        }
+      });
+
+      setInterval(function () {
+        if (!latestGames || touching || gameListEl.querySelector('.swiping')) {
+          return;
+        }
+        var signature = gamesSignature(latestGames);
+        if (signature === shownSignature) {
+          return;
+        }
+        shownSignature = signature;
+        var games = latestGames;
+        loadPlayerNames().then(function () {
+          var active = games.filter(function (g) {
+            return !g.deletedAt;
+          });
+          active.sort(function (a, b) {
+            return b.id - a.id;
+          });
+          renderGameList(active);
+          undoDeleteBtn.hidden = !games.some(function (g) {
+            return !!g.deletedAt;
+          });
+        });
+      }, AUTO_REFRESH_MS);
+    }
     refreshRoster();
   </script>
 </body>
