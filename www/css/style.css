@@ -1036,3 +1036,15 @@ body {
 #endDayResult .settle-table thead th:nth-child(6) {
   color: #00ff7f; /* Spring Green */
 }
+
+/* Thêm Set: player boxes are pick-only (tap to choose from today's roster) */
+.player-pick {
+  cursor: pointer;
+  caret-color: transparent;
+}
+
+.player-suggestion-group {
+  flex-shrink: 0;
+  font-size: 0.75rem;
+  color: var(--text-dim);
+}

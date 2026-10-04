@@ -30,7 +30,7 @@
         <div class="form-group">
           <label for="team1Player1">Lông Thủ 1</label>
           <div class="player-combo">
-            <input type="text" id="team1Player1" autocomplete="off">
+            <input type="text" class="player-pick" readonly placeholder="Chọn Lông Thủ" id="team1Player1" autocomplete="off">
             <ul class="player-suggestions" id="team1Player1Suggestions" hidden></ul>
           </div>
           <div class="field-error" id="team1Player1Error" hidden></div>
@@ -38,7 +38,7 @@
         <div class="form-group">
           <label for="team1Player2">Lông Thủ 2</label>
           <div class="player-combo">
-            <input type="text" id="team1Player2" autocomplete="off">
+            <input type="text" class="player-pick" readonly placeholder="Chọn Lông Thủ" id="team1Player2" autocomplete="off">
             <ul class="player-suggestions" id="team1Player2Suggestions" hidden></ul>
           </div>
           <div class="field-error" id="team1Player2Error" hidden></div>
@@ -50,7 +50,7 @@
         <div class="form-group">
           <label for="team2Player1">Lông Thủ 1</label>
           <div class="player-combo">
-            <input type="text" id="team2Player1" autocomplete="off">
+            <input type="text" class="player-pick" readonly placeholder="Chọn Lông Thủ" id="team2Player1" autocomplete="off">
             <ul class="player-suggestions" id="team2Player1Suggestions" hidden></ul>
           </div>
           <div class="field-error" id="team2Player1Error" hidden></div>
@@ -58,7 +58,7 @@
         <div class="form-group">
           <label for="team2Player2">Lông Thủ 2</label>
           <div class="player-combo">
-            <input type="text" id="team2Player2" autocomplete="off">
+            <input type="text" class="player-pick" readonly placeholder="Chọn Lông Thủ" id="team2Player2" autocomplete="off">
             <ul class="player-suggestions" id="team2Player2Suggestions" hidden></ul>
           </div>
           <div class="field-error" id="team2Player2Error" hidden></div>
@@ -83,27 +83,27 @@
     var fieldIds = ['team1Player1', 'team1Player2', 'team2Player1', 'team2Player2'];
 
     var allPlayers = [];
-    var hideTimers = {};
 
-    // Only today's TV Cố Định (Chơi) and TV Vãng Lai can be put in a set.
+    // Only today's TV Cố Định (Chơi) and TV Vãng Lai can be put in a set, so names are picked
+    // from that list rather than typed.
     function refreshPlayers() {
-      return Promise.all([Players.findAll(), GameDays.playableToday(dayId)]).then(function (results) {
-        var playableIds = {};
-        results[1].forEach(function (p) {
-          playableIds[p.playerId] = true;
-        });
-        allPlayers = results[0].filter(function (p) {
-          return playableIds[p.id];
-        });
+      return GameDays.roster(dayId).then(function (roster) {
+        allPlayers = roster.members.filter(function (m) {
+          return m.playing;
+        }).map(function (m) {
+          return { id: m.playerId, name: m.name, group: 'Cố Định' };
+        }).concat(roster.guests.map(function (g) {
+          return { id: g.playerId, name: g.name, group: 'Vãng Lai' };
+        }));
       });
     }
 
-    // Names already typed into the other three boxes, so each player is offered only once.
+    // Names already picked in the other three boxes, so each player is offered only once.
     function namesChosenElsewhere(fieldId) {
       var chosen = {};
       fieldIds.forEach(function (id) {
         if (id !== fieldId) {
-          chosen[Players.normalize(document.getElementById(id).value).toLowerCase()] = true;
+          chosen[document.getElementById(id).value.toLowerCase()] = true;
         }
       });
       return chosen;
@@ -118,12 +118,10 @@
     }
 
     function renderSuggestions(fieldId) {
-      var input = document.getElementById(fieldId);
       var list = document.getElementById(fieldId + 'Suggestions');
-      var query = PlayerSuggest.fold(input.value.trim());
       var chosen = namesChosenElsewhere(fieldId);
       var matches = allPlayers.filter(function (p) {
-        return !chosen[p.name.toLowerCase()] && (!query || PlayerSuggest.fold(p.name).indexOf(query) !== -1);
+        return !chosen[p.name.toLowerCase()];
       });
 
       list.innerHTML = '';
@@ -132,7 +130,7 @@
         empty.className = 'player-suggestion-empty';
         empty.textContent = allPlayers.length === 0
           ? 'Chưa có TV Cố Định / TV Vãng Lai hôm nay'
-          : 'Không có Lông Thủ phù hợp';
+          : 'Không còn Lông Thủ để chọn';
         list.appendChild(empty);
       } else {
         matches.forEach(function (player) {
@@ -145,9 +143,9 @@
     function selectPlayer(fieldId, name) {
       document.getElementById(fieldId).value = name;
       document.getElementById(fieldId + 'Suggestions').hidden = true;
+      document.getElementById(fieldId + 'Error').hidden = true;
     }
 
-    // A suggestion is just the name: players can't be renamed or deleted from this screen.
     function buildSuggestionRow(fieldId, player) {
       var li = document.createElement('li');
       li.className = 'player-suggestion';
@@ -156,49 +154,34 @@
       var nameSpan = document.createElement('span');
       nameSpan.className = 'player-suggestion-name';
       nameSpan.textContent = player.name;
+      var groupSpan = document.createElement('span');
+      groupSpan.className = 'player-suggestion-group';
+      groupSpan.textContent = player.group;
       li.addEventListener('click', function () {
-        clearTimeout(hideTimers[fieldId]);
         selectPlayer(fieldId, player.name);
       });
       li.appendChild(nameSpan);
+      li.appendChild(groupSpan);
       return li;
     }
 
-    var listInteracting = {};
-
+    // The boxes are read-only: a tap opens (or closes) the list, and a tap anywhere else closes it.
     fieldIds.forEach(function (fieldId) {
       var input = document.getElementById(fieldId);
-      var list = document.getElementById(fieldId + 'Suggestions');
-
-      input.addEventListener('focus', function () {
-        clearTimeout(hideTimers[fieldId]);
+      input.addEventListener('click', function () {
+        var list = document.getElementById(fieldId + 'Suggestions');
         closeOtherSuggestions(fieldId);
-        renderSuggestions(fieldId);
-      });
-      input.addEventListener('input', function () {
-        renderSuggestions(fieldId);
-      });
-      input.addEventListener('blur', function () {
-        if (listInteracting[fieldId]) {
-          return;
-        }
-        hideTimers[fieldId] = setTimeout(function () {
+        if (list.hidden) {
+          renderSuggestions(fieldId);
+        } else {
           list.hidden = true;
-        }, 150);
+        }
       });
-      // While a touch is down anywhere in the list, ignore blur entirely — Android fires a
-      // spurious blur on the input partway through a press on the name text, and that would
-      // otherwise close the list before the tap lands.
-      list.addEventListener('pointerdown', function () {
-        listInteracting[fieldId] = true;
-        clearTimeout(hideTimers[fieldId]);
-      }, true);
-      list.addEventListener('pointerup', function () {
-        listInteracting[fieldId] = false;
-      }, true);
-      list.addEventListener('pointercancel', function () {
-        listInteracting[fieldId] = false;
-      }, true);
+    });
+    document.addEventListener('click', function (e) {
+      if (!e.target.closest('.player-combo')) {
+        closeOtherSuggestions(null);
+      }
     });
 
     refreshPlayers();
@@ -223,7 +206,7 @@
         values[id] = raw;
         if (!raw) {
           var errEl = document.getElementById(id + 'Error');
-          errEl.textContent = 'Enter a player name';
+          errEl.textContent = 'Chọn Lông Thủ';
           errEl.hidden = false;
           hasBlank = true;
         }

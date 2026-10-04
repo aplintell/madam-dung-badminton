@@ -35,7 +35,14 @@
     if (share) {
       share.share({ title: title, text: text, dialogTitle: 'Chia sẻ' }).catch(reportShareError);
     } else if (navigator.share) {
-      navigator.share({ title: title, text: text }).catch(function () {});
+      navigator.share({ title: title, text: text }).catch(function (err) {
+        // Reached after a failed picture render, by which time the tap no longer counts.
+        if (err && err.name === 'NotAllowedError') {
+          showTapToShare(function () {
+            navigator.share({ title: title, text: text }).catch(function () {});
+          });
+        }
+      });
     } else if (navigator.clipboard) {
       navigator.clipboard.writeText(text).then(function () {
         alert('Copied to clipboard!');
@@ -176,8 +183,18 @@
         alert('Đã tải ảnh xuống. Hãy đính kèm ảnh vào Messenger/Zalo để chia sẻ.');
       }
 
+      // Files only: Safari on iPhone fails or drops the pictures for some apps when a title or
+      // text is shared alongside them.
       function webShare() {
-        return navigator.share({ files: files, title: title });
+        return navigator.share({ files: files });
+      }
+
+      function reportWebShareError(err) {
+        if (err && err.name === 'AbortError') {
+          return; // closed the share sheet without picking an app
+        }
+        alert('Không chia sẻ được (' + (err && (err.name + ': ' + err.message)) + '). Ảnh sẽ được tải xuống.');
+        downloadAll();
       }
 
       if (!(navigator.canShare && navigator.canShare({ files: files }))) {
@@ -185,21 +202,24 @@
         return;
       }
 
-      // Browsers (Safari on iPhone especially) only open the share sheet straight after a tap,
-      // and rendering the images takes longer than that allowance. When the share is refused
-      // for that reason, ask for one more tap and share from inside it.
-      return webShare().catch(function (err) {
-        if (err && err.name === 'NotAllowedError') {
-          showTapToShare(function () {
-            webShare().catch(function (retryErr) {
-              if (!retryErr || retryErr.name !== 'AbortError') {
-                downloadAll();
-              }
+      // Browsers only open the share sheet straight after a tap, and rendering the images takes
+      // longer than that allowance. Safari on iPhone also tends to refuse every later share on
+      // the page once one has been refused, so don't try unless the tap still counts: ask for
+      // one more tap instead and share from inside it.
+      var tapStillActive = navigator.userActivation && navigator.userActivation.isActive;
+      if (tapStillActive) {
+        return webShare().catch(function (err) {
+          if (err && err.name === 'NotAllowedError') {
+            showTapToShare(function () {
+              webShare().catch(reportWebShareError);
             });
-          });
-        } else if (!err || err.name !== 'AbortError') {
-          downloadAll();
-        }
+          } else {
+            reportWebShareError(err);
+          }
+        });
+      }
+      showTapToShare(function () {
+        webShare().catch(reportWebShareError);
       });
     });
   }
