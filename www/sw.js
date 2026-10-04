@@ -1,5 +1,5 @@
 // Bump when files change so phones pick up the new version.
-var CACHE = 'madam-dung-v2';
+var CACHE = 'madam-dung-v3';
 
 var FILES = [
   './',

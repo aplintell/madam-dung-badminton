@@ -173,14 +173,14 @@
       onReady();
       var files = qrFile ? screenshotFiles.concat([qrFile]) : screenshotFiles;
 
-      function downloadAll() {
+      function downloadAll(reason) {
         images.forEach(function (image) {
           downloadImage(image.blob, image.fileName);
         });
         if (qrFile) {
           downloadImage(qrFile, 'payment-qr.jpg');
         }
-        alert('Đã tải ảnh xuống. Hãy đính kèm ảnh vào Messenger/Zalo để chia sẻ.');
+        alert('Đã tải ảnh xuống. Hãy đính kèm ảnh vào Messenger/Zalo để chia sẻ.\n\n(' + reason + ')');
       }
 
       // Files only: Safari on iPhone fails or drops the pictures for some apps when a title or
@@ -193,12 +193,27 @@
         if (err && err.name === 'AbortError') {
           return; // closed the share sheet without picking an app
         }
-        alert('Không chia sẻ được (' + (err && (err.name + ': ' + err.message)) + '). Ảnh sẽ được tải xuống.');
-        downloadAll();
+        downloadAll('Lỗi chia sẻ: ' + (err && (err.name + ': ' + err.message)));
       }
 
-      if (!(navigator.canShare && navigator.canShare({ files: files }))) {
-        downloadAll();
+      // Any refusal other than closing the sheet: offer one more go from a fresh tap before
+      // falling back to downloading.
+      function retryFromTap(err) {
+        if (err && err.name === 'AbortError') {
+          return;
+        }
+        showTapToShare(function () {
+          webShare().catch(reportWebShareError);
+        });
+      }
+
+      if (!navigator.share || !navigator.canShare) {
+        // e.g. the built-in browser of Zalo / Messenger / Facebook, which has no share sheet
+        downloadAll('Trình duyệt này không hỗ trợ chia sẻ ảnh. Hãy mở link bằng Chrome hoặc Safari.');
+        return;
+      }
+      if (!navigator.canShare({ files: files })) {
+        downloadAll('Trình duyệt không cho chia sẻ các ảnh này');
         return;
       }
 
@@ -208,15 +223,7 @@
       // one more tap instead and share from inside it.
       var tapStillActive = navigator.userActivation && navigator.userActivation.isActive;
       if (tapStillActive) {
-        return webShare().catch(function (err) {
-          if (err && err.name === 'NotAllowedError') {
-            showTapToShare(function () {
-              webShare().catch(reportWebShareError);
-            });
-          } else {
-            reportWebShareError(err);
-          }
-        });
+        return webShare().catch(retryFromTap);
       }
       showTapToShare(function () {
         webShare().catch(reportWebShareError);
