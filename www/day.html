@@ -631,32 +631,35 @@
           settleSummaryEl.innerHTML = '';
           var lines = [];
 
-          // The heading area is a small two-column table (what | amount) above the players table.
+          // The heading area is a 4-column table above the players table: short labels on top,
+          // the amounts underneath. The text version for sharing keeps the full wording.
           var summaryTable = document.createElement('table');
           summaryTable.className = 'settle-table summary-table';
+          var summaryHeadRow = document.createElement('tr');
+          var summaryValueRow = document.createElement('tr');
+          var summaryHead = document.createElement('thead');
           var summaryBody = document.createElement('tbody');
+          summaryHead.appendChild(summaryHeadRow);
+          summaryBody.appendChild(summaryValueRow);
+          summaryTable.appendChild(summaryHead);
           summaryTable.appendChild(summaryBody);
           settleSummaryEl.appendChild(summaryTable);
 
-          function addSummaryLine(label, amount, shareSeparator) {
-            var tr = document.createElement('tr');
+          function addSummaryLine(shortLabel, shareLabel, amount, shareSeparator) {
             var th = document.createElement('th');
-            th.scope = 'row';
-            th.className = 'col-name';
-            th.textContent = label;
+            th.scope = 'col';
+            th.textContent = shortLabel;
+            summaryHeadRow.appendChild(th);
             var td = document.createElement('td');
-            td.className = 'col-num';
-            td.textContent = formatMoney(amount) + ' 💵';
-            tr.appendChild(th);
-            tr.appendChild(td);
-            summaryBody.appendChild(tr);
-            lines.push(label + shareSeparator + formatMoney(amount) + ' 💵');
+            td.textContent = formatMoney(amount);
+            summaryValueRow.appendChild(td);
+            lines.push(shareLabel + shareSeparator + formatMoney(amount) + ' 💵');
           }
 
-          addSummaryLine('Cầu + Sân + Nước', data.totalPrice, ' = ');
-          addSummaryLine('Đã Thu Vãng Lai', data.guestPaidTotal, ' = ');
-          addSummaryLine('Phát Sinh', data.extraCost, ' = ');
-          addSummaryLine('Nước Độ / Set', data.waterRate, ': ');
+          addSummaryLine('Cầu/Sân/Nước', 'Cầu + Sân + Nước', data.totalPrice, ' = ');
+          addSummaryLine('Thu VL', 'Đã Thu Vãng Lai', data.guestPaidTotal, ' = ');
+          addSummaryLine('Phát Sinh', 'Phát Sinh', data.extraCost, ' = ');
+          addSummaryLine('Độ/Set', 'Nước Độ / Set', data.waterRate, ': ');
 
           function addCell(tr, tag, className, text) {
             var cell = document.createElement(tag);
