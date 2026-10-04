@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 28" role="img" aria-label="Sân cầu lông">
+<svg xmlns="http://www.w3.org/2000/svg" width="80" height="56" viewBox="0 0 40 28" role="img" aria-label="Sân cầu lông">
   <!-- Badminton court in perspective: green surface, white lines, net across the middle. -->
   <polygon points="8,2.5 32,2.5 39.5,25.5 0.5,25.5" fill="#2fa84f" stroke="#1d7a35" stroke-width="0.8" stroke-linejoin="round"/>
   <g fill="none" stroke="#ffffff" stroke-width="0.9" stroke-linecap="round">

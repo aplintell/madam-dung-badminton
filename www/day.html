@@ -619,7 +619,9 @@
       }
     }
 
-    var COURT_ICON = {}; // marks where the badminton-court picture goes in a summary heading
+    // Pictures used in summary headings in place of emoji.
+    var SHUTTLECOCK_ICON = { src: 'img/icons/shuttlecock.png', className: 'shuttle-icon' };
+    var COURT_ICON = { src: 'img/icons/court.png', className: 'court-icon' };
 
     function calculateSettlement() {
       var shuttlecockPrice = parseFloat(shuttlecockInput.value) || 0;
@@ -647,15 +649,15 @@
           summaryTable.appendChild(summaryBody);
           settleSummaryEl.appendChild(summaryTable);
 
-          // shortLabel is text, or an array of text and court-icon pieces.
+          // shortLabel is text, or an array of text and picture ({ src, className }) pieces.
           function addSummaryLine(shortLabel, shareLabel, amount, shareSeparator) {
             var th = document.createElement('th');
             th.scope = 'col';
             [].concat(shortLabel).forEach(function (piece) {
-              if (piece === COURT_ICON) {
+              if (typeof piece === 'object') {
                 var img = document.createElement('img');
-                img.className = 'court-icon';
-                img.src = 'img/icons/court.svg';
+                img.className = piece.className;
+                img.src = piece.src;
                 img.alt = '';
                 th.appendChild(img);
               } else {
@@ -670,7 +672,7 @@
             lines.push(shareLabel + shareSeparator + formatMoney(amount) + ' 💵');
           }
 
-          addSummaryLine(['🏸/', COURT_ICON, '/💧'], 'Cầu + Sân + Nước', data.totalPrice, ' = '); // shuttlecock / court / water
+          addSummaryLine([SHUTTLECOCK_ICON, '/', COURT_ICON, '/💧'], 'Cầu + Sân + Nước', data.totalPrice, ' = '); // shuttlecock / court / water
           addSummaryLine('Thu VL', 'Đã Thu Vãng Lai', data.guestPaidTotal, ' = ');
           addSummaryLine('Phát Sinh', 'Phát Sinh', data.extraCost, ' = ');
           addSummaryLine('Độ/Set', 'Nước Độ / Set', data.waterRate, ': ');

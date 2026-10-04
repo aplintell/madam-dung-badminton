@@ -30,7 +30,8 @@ var FILES = [
   'img/icons/icon-180.png',
   'img/icons/icon-192.png',
   'img/icons/icon-512.png',
-  'img/icons/court.svg'
+  'img/icons/court.png',
+  'img/icons/shuttlecock.png'
 ];
 
 self.addEventListener('install', function (event) {

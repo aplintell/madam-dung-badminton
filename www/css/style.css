@@ -1489,3 +1489,11 @@ body {
   vertical-align: -0.55em;
   margin: 0 2px;
 }
+
+/* Shuttlecock picture used in the Kết Ngày summary heading */
+.shuttle-icon {
+  height: 1.5em;
+  width: auto;
+  vertical-align: -0.45em;
+  margin: 0 1px;
+}
