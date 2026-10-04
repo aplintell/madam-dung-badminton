@@ -1,0 +1,11 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Only the shared group account (see www/js/firebase-config.js) can read or change data.
+    match /{collection}/{id} {
+      allow read, write: if collection in ['players', 'gameDays', 'games', 'months', 'members']
+        && request.auth != null
+        && request.auth.token.email == 'group@madam-dung-badminton.firebaseapp.com';
+    }
+  }
+}

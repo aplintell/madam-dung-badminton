@@ -17,6 +17,7 @@
 <body>
   <header class="topbar">
     <h1>Madam Dung Badminton</h1>
+    <button id="signOutBtn" class="icon-button" type="button" aria-label="Đăng xuất" hidden>&#x23FB;</button>
   </header>
 
   <main class="container">
@@ -46,10 +47,25 @@
   </div>
 
   <script src="js/pwa.js"></script>
+  <script src="js/vendor/firebase-app-compat.js"></script>
+  <script src="js/vendor/firebase-auth-compat.js"></script>
+  <script src="js/vendor/firebase-firestore-compat.js"></script>
+  <script src="js/firebase-config.js"></script>
+  <script src="js/cloud.js"></script>
   <script src="js/db.js"></script>
   <script src="js/services.js"></script>
   <script src="js/back-button.js"></script>
   <script>
+    var signOutBtn = document.getElementById('signOutBtn');
+    if (BadmintonDb.signOut) {
+      signOutBtn.hidden = false;
+      signOutBtn.addEventListener('click', function () {
+        if (window.confirm('Đăng xuất khỏi nhóm?')) {
+          BadmintonDb.signOut();
+        }
+      });
+    }
+
     var emptyStateEl = document.getElementById('emptyState');
     var monthListEl = document.getElementById('monthList');
     var addMonthBtn = document.getElementById('addMonthBtn');

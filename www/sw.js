@@ -1,5 +1,5 @@
 // Bump when files change so phones pick up the new version.
-var CACHE = 'madam-dung-v4';
+var CACHE = 'madam-dung-v5';
 
 var FILES = [
   './',
@@ -18,6 +18,11 @@ var FILES = [
   'js/share-image.js',
   'js/html2canvas.min.js',
   'js/pwa.js',
+  'js/firebase-config.js',
+  'js/cloud.js',
+  'js/vendor/firebase-app-compat.js',
+  'js/vendor/firebase-auth-compat.js',
+  'js/vendor/firebase-firestore-compat.js',
   'img/payment-qr.jpg',
   'img/icons/icon-180.png',
   'img/icons/icon-192.png',

@@ -128,7 +128,8 @@
 
   // ---- Game days (port of GameDayService.java) ----
 
-  var RETAINED_YEARS = 3;
+  // The shared (Firebase) data keeps 1 year; the packaged Android app keeps 3 on the phone.
+  var RETAINED_YEARS = global.CloudDb ? 1 : 3;
   // Giá Độ Nước / Set used until another value is typed in End Day.
   var DEFAULT_WATER_RATE = 8;
   // Tiền Cầu for a TV Vãng Lai until another amount is typed when adding one.
@@ -166,32 +167,34 @@
   }
 
   /**
-   * Keeps only the last RETAINED_YEARS years of data, counted back from the newest game in the
-   * system (not from today), so nothing is lost just because the app wasn't used for a while.
+   * Keeps only the last RETAINED_YEARS years of data, counted back from the newest Ngày Chơi in
+   * the system (not from today), so nothing is lost just because the app wasn't used for a while.
    * Deletes older game days with their games and members of older months, then those month records.
+   * Works from day dates rather than every game ever played, which in the shared (Firebase)
+   * version would cost a read per game.
    */
   function pruneOldData() {
-    return Promise.all([Db.getAll('games'), Db.getAll('gameDays'), Db.getAll('months'), Db.getAll('members')]).then(function (results) {
-      var latestCreatedAt = null;
-      results[0].forEach(function (g) {
-        if (g.createdAt && (latestCreatedAt === null || g.createdAt > latestCreatedAt)) {
-          latestCreatedAt = g.createdAt;
+    return Promise.all([Db.getAll('gameDays'), Db.getAll('months'), Db.getAll('members')]).then(function (results) {
+      var latestDate = null;
+      results[0].forEach(function (day) {
+        if (day.date && (latestDate === null || day.date > latestDate)) {
+          latestDate = day.date;
         }
       });
-      if (latestCreatedAt === null) {
+      if (latestDate === null) {
         return;
       }
-      var latest = new Date(latestCreatedAt);
-      var cutoffDate = toIsoDate(new Date(latest.getFullYear() - RETAINED_YEARS, latest.getMonth(), latest.getDate()));
+      var parts = latestDate.split('-');
+      var cutoffDate = toIsoDate(new Date(parseInt(parts[0], 10) - RETAINED_YEARS, parseInt(parts[1], 10) - 1, parseInt(parts[2], 10)));
       var cutoffMonthKey = monthKeyOfDate(cutoffDate);
 
-      var oldDays = results[1].filter(function (day) {
+      var oldDays = results[0].filter(function (day) {
         return day.date < cutoffDate;
       });
-      var oldMonths = results[2].filter(function (month) {
+      var oldMonths = results[1].filter(function (month) {
         return month.key < cutoffMonthKey;
       });
-      var oldMembers = results[3].filter(function (member) {
+      var oldMembers = results[2].filter(function (member) {
         return member.monthKey < cutoffMonthKey;
       });
       return Promise.all(oldDays.map(function (day) {

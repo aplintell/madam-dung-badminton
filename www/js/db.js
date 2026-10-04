@@ -94,7 +94,9 @@
     });
   }
 
-  global.BadmintonDb = {
+  // In a browser the data lives in Firebase (cloud.js) so all phones share it; the packaged
+  // Android app keeps it on the phone.
+  global.BadmintonDb = global.CloudDb || {
     add: add,
     put: put,
     get: get,
