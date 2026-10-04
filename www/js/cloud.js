@@ -27,22 +27,45 @@
   var SIGNED_IN_KEY = 'madamDung.signedIn';
   var loginEl = null;
 
-  function rememberSignedIn(value) {
+  function load(key) {
     try {
-      if (value) {
-        localStorage.setItem(SIGNED_IN_KEY, '1');
+      return localStorage.getItem(key);
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function store(key, value) {
+    try {
+      if (value === null) {
+        localStorage.removeItem(key);
       } else {
-        localStorage.removeItem(SIGNED_IN_KEY);
+        localStorage.setItem(key, value);
       }
     } catch (e) {}
   }
 
   function wasSignedInBefore() {
-    try {
-      return localStorage.getItem(SIGNED_IN_KEY) === '1';
-    } catch (e) {
-      return false;
-    }
+    return load(SIGNED_IN_KEY) === '1';
+  }
+
+  // ---- Player phones ----
+  // A phone whose first login happens on a shared Player Game List link is a "player" phone: it
+  // can only use the Player Game List of that day and Thêm Set, and every other page sends it
+  // back there. Opening a link for another day moves it to that day.
+
+  var PLAYER_DAY_KEY = 'madamDung.playerDayId';
+  var PLAYER_PAGES = ['player-day.html', 'game-form.html'];
+  var pageName = window.location.pathname.split('/').pop() || 'index.html';
+  var pageDayId = new URLSearchParams(window.location.search).get('id');
+
+  var lockedDayId = load(PLAYER_DAY_KEY);
+  if (lockedDayId && pageName === 'player-day.html' && pageDayId) {
+    lockedDayId = pageDayId;
+    store(PLAYER_DAY_KEY, lockedDayId);
+  }
+  if (lockedDayId && PLAYER_PAGES.indexOf(pageName) === -1) {
+    window.location.replace('player-day.html?id=' + lockedDayId);
   }
 
   function showLogin() {
@@ -95,8 +118,11 @@
     var wasSignedIn = false;
     auth.onAuthStateChanged(function (user) {
       if (user) {
+        if (!wasSignedInBefore() && pageName === 'player-day.html' && pageDayId) {
+          store(PLAYER_DAY_KEY, pageDayId); // first login came through a Player Game List link
+        }
         wasSignedIn = true;
-        rememberSignedIn(true);
+        store(SIGNED_IN_KEY, '1');
         if (loginEl) {
           loginEl.hidden = true;
         }
@@ -209,6 +235,28 @@
     }).then(data);
   }
 
+  // Calls onChange with the matching records now and again whenever any of them changes on any
+  // phone. Returns a function that stops listening.
+  function watchByIndex(storeName, field, value, onChange) {
+    var stop = null;
+    var stopped = false;
+    ready(storeName).then(function () {
+      if (!stopped) {
+        stop = db.collection(storeName).where(field, '==', value).onSnapshot(function (snap) {
+          onChange(data(snap));
+        }, function (err) {
+          console.error('Firestore listen failed', err);
+        });
+      }
+    });
+    return function () {
+      stopped = true;
+      if (stop) {
+        stop();
+      }
+    };
+  }
+
   function remove(storeName, id) {
     return ready(storeName).then(function () {
       return settle(db.collection(storeName).doc(String(id)).delete());
@@ -221,6 +269,7 @@
     get: get,
     getAll: getAll,
     getAllByIndex: getAllByIndex,
-    remove: remove
+    remove: remove,
+    watchByIndex: watchByIndex
   };
 })(window);

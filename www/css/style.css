@@ -1096,3 +1096,20 @@ body {
   font-size: 0.9rem;
   text-align: center;
 }
+
+/* Share Player Game List link: sits just above the add (+) button */
+.fab-share {
+  bottom: calc(24px + 60px + 16px + env(safe-area-inset-bottom));
+  background: var(--surface-alt);
+  border: 1px solid var(--border);
+  cursor: pointer;
+}
+
+.fab-share[hidden] {
+  display: none;
+}
+
+.fab-share-icon {
+  font-size: 1.6rem;
+  line-height: 1;
+}

@@ -1,5 +1,5 @@
 // Bump when files change so phones pick up the new version.
-var CACHE = 'madam-dung-v6';
+var CACHE = 'madam-dung-v7';
 
 var FILES = [
   './',
@@ -8,6 +8,7 @@ var FILES = [
   'days.html',
   'day.html',
   'game-form.html',
+  'player-day.html',
   'members.html',
   'manifest.webmanifest',
   'css/style.css',

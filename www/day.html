@@ -48,6 +48,10 @@
     <span class="fab-center-icon" aria-hidden="true">&#127937;</span>
   </button>
 
+  <button id="sharePlayerLinkBtn" class="fab fab-share" type="button" aria-label="Chia sẻ Player Game List" hidden>
+    <span class="fab-share-icon" aria-hidden="true">&#128279;</span>
+  </button>
+
   <a id="addGameLink" class="fab" href="#" aria-label="Add game"><span class="fab-plus" aria-hidden="true"></span></a>
 
   <div id="endDayModal" class="modal-overlay" hidden>
@@ -151,6 +155,18 @@
     var dayId = parseInt(new URLSearchParams(window.location.search).get('id'), 10);
 
     document.getElementById('addGameLink').setAttribute('href', 'game-form.html?dayId=' + dayId);
+
+    // Share: sends the Player Game List link for this day to Zalo/Messenger. Only in the shared
+    // (Firebase) web version — the packaged app's data isn't online, so a link would show nothing.
+    var sharePlayerLinkBtn = document.getElementById('sharePlayerLinkBtn');
+    if (BadmintonDb.watchByIndex) {
+      sharePlayerLinkBtn.hidden = false;
+      sharePlayerLinkBtn.addEventListener('click', function () {
+        var dayName = document.getElementById('dayTitle').textContent;
+        var url = window.location.href.split('#')[0].split('?')[0].replace(/[^/]*$/, '') + 'player-day.html?id=' + dayId;
+        ShareImage.shareText('Danh sách Set ' + dayName, '🏸 Danh sách Set ' + dayName + '\n' + url);
+      });
+    }
 
     var emptyStateEl = document.getElementById('emptyState');
     var gameListEl = document.getElementById('gameList');

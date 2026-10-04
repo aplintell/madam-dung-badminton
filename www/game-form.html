@@ -81,13 +81,17 @@
   <script src="js/player-suggest.js"></script>
   <script>
     var dayId = parseInt(new URLSearchParams(window.location.search).get('dayId'), 10);
-    document.getElementById('backLink').setAttribute('href', 'day.html?id=' + dayId);
+    // Players coming from the Player Game List go back there, never to the full Game List.
+    var fromPlayer = new URLSearchParams(window.location.search).get('from') === 'player';
+    var dayPage = (fromPlayer ? 'player-day.html?id=' : 'day.html?id=') + dayId;
+    document.getElementById('backLink').setAttribute('href', dayPage);
 
     var form = document.getElementById('newGameForm');
     var globalError = document.getElementById('globalError');
     var fieldIds = ['team1Player1', 'team1Player2', 'team2Player1', 'team2Player2'];
 
     var allPlayers = [];
+    var playersReady = Promise.resolve();
 
     // Only today's TV Cố Định (Chơi) and TV Vãng Lai can be put in a set, so names are picked
     // from that list rather than typed.
@@ -177,7 +181,10 @@
         var list = document.getElementById(fieldId + 'Suggestions');
         closeOtherSuggestions(fieldId);
         if (list.hidden) {
-          renderSuggestions(fieldId);
+          // Wait for today's roster on a slow connection rather than showing an empty list.
+          playersReady.then(function () {
+            renderSuggestions(fieldId);
+          });
         } else {
           list.hidden = true;
         }
@@ -189,7 +196,7 @@
       }
     });
 
-    refreshPlayers();
+    playersReady = refreshPlayers();
 
     function clearErrors() {
       globalError.hidden = true;
@@ -239,7 +246,7 @@
 
       Games.addGame(dayId, values.team1Player1, values.team1Player2, values.team2Player1, values.team2Player2)
         .then(function () {
-          window.location.href = 'day.html?id=' + dayId;
+          window.location.href = dayPage;
         })
         .catch(function (err) {
           globalError.textContent = err.message;

@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+  <title>Player Game List</title>
+  <link rel="stylesheet" href="css/style.css">
+  <meta name="theme-color" content="#0f1115">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" type="image/png" href="img/icons/icon-192.png">
+  <link rel="apple-touch-icon" href="img/icons/icon-180.png">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Madam Dung">
+</head>
+<body>
+  <!-- Player Game List: the day's sets for players opening a shared link. They can mark winners
+       and add sets, but there is no way from here to any other page. -->
+  <header class="topbar">
+    <h1 id="dayTitle">Loading...</h1>
+  </header>
+
+  <main class="container">
+    <div id="emptyState" class="empty-state" hidden>
+      <p>Chưa có Set nào.</p>
+      <p>Bấm dấu + góc dưới màn hình để thêm Set mới.</p>
+    </div>
+
+    <div id="gameList" class="game-list" hidden></div>
+
+    <p id="gameHint" class="game-hint" hidden>Bấm vào đội Thắng, Bấm lại là hủy</p>
+  </main>
+
+  <a id="addGameLink" class="fab" href="#" aria-label="Add game"><span class="fab-plus" aria-hidden="true"></span></a>
+
+  <script src="js/pwa.js"></script>
+  <script src="js/vendor/firebase-app-compat.js"></script>
+  <script src="js/vendor/firebase-auth-compat.js"></script>
+  <script src="js/vendor/firebase-firestore-compat.js"></script>
+  <script src="js/firebase-config.js"></script>
+  <script src="js/cloud.js"></script>
+  <script src="js/db.js"></script>
+  <script src="js/services.js"></script>
+  <script>
+    var dayId = parseInt(new URLSearchParams(window.location.search).get('id'), 10);
+
+    document.getElementById('addGameLink').setAttribute('href', 'game-form.html?dayId=' + dayId + '&from=player');
+
+    var titleEl = document.getElementById('dayTitle');
+    var emptyStateEl = document.getElementById('emptyState');
+    var gameListEl = document.getElementById('gameList');
+    var gameHintEl = document.getElementById('gameHint');
+
+    var playerNameById = {};
+
+    function loadPlayerNames() {
+      return Players.findAll().then(function (players) {
+        playerNameById = {};
+        players.forEach(function (p) {
+          playerNameById[p.id] = p.name;
+        });
+      });
+    }
+
+    function formatTimeLabel(isoString) {
+      var d = new Date(isoString);
+      var hh = d.getHours() < 10 ? '0' + d.getHours() : String(d.getHours());
+      var mm = d.getMinutes() < 10 ? '0' + d.getMinutes() : String(d.getMinutes());
+      return hh + ':' + mm;
+    }
+
+    function buildTeamElement(teamNumber, name1, name2, winningTeam) {
+      var team = document.createElement('div');
+      team.className = 'team ' + (teamNumber === 1 ? 'team-left' : 'team-right');
+      team.setAttribute('data-team', String(teamNumber));
+      if (winningTeam === teamNumber) {
+        team.classList.add('winner');
+      } else if (winningTeam && winningTeam !== teamNumber) {
+        team.classList.add('loser');
+      }
+
+      var stampWin = document.createElement('span');
+      stampWin.className = 'stamp stamp-win';
+      stampWin.textContent = '🏆 Lụm';
+      var stampLose = document.createElement('span');
+      stampLose.className = 'stamp stamp-lose';
+      stampLose.textContent = '😭 Lỏ';
+
+      var players = document.createElement('div');
+      players.className = 'players';
+      [name1, name2].forEach(function (n) {
+        var span = document.createElement('span');
+        span.textContent = n;
+        players.appendChild(span);
+      });
+
+      team.appendChild(stampWin);
+      team.appendChild(stampLose);
+      team.appendChild(players);
+      return team;
+    }
+
+    // Same row as the Game List, without the swipe-to-delete background.
+    function buildGameRowElement(game) {
+      var row = document.createElement('div');
+      row.className = 'game-row';
+      row.setAttribute('data-game-id', String(game.id));
+
+      var content = document.createElement('div');
+      content.className = 'game-row-content';
+
+      content.appendChild(buildTeamElement(1, playerNameById[game.team1Player1Id], playerNameById[game.team1Player2Id], game.winningTeam));
+
+      var vsLabel = document.createElement('div');
+      vsLabel.className = 'vs-label';
+      var vsSpan = document.createElement('span');
+      vsSpan.textContent = 'VS';
+      vsLabel.appendChild(vsSpan);
+      if (game.createdAt) {
+        var timeSpan = document.createElement('span');
+        timeSpan.className = 'vs-time';
+        timeSpan.textContent = formatTimeLabel(game.createdAt);
+        vsLabel.appendChild(timeSpan);
+      }
+      content.appendChild(vsLabel);
+
+      content.appendChild(buildTeamElement(2, playerNameById[game.team2Player1Id], playerNameById[game.team2Player2Id], game.winningTeam));
+
+      row.appendChild(content);
+      return row;
+    }
+
+    // Tap a team to mark it the winner; tap the winner again to undo.
+    function bindGameRow(row) {
+      row.querySelectorAll('.team').forEach(function (el) {
+        el.addEventListener('click', function () {
+          var gameId = parseInt(row.getAttribute('data-game-id'), 10);
+          var clickedTeam = parseInt(el.getAttribute('data-team'), 10);
+          var newWinningTeam = el.classList.contains('winner') ? null : clickedTeam;
+
+          Games.getOrThrow(gameId)
+            .then(function (game) {
+              return Games.setWinner(game, newWinningTeam);
+            })
+            .then(function () {
+              row.querySelectorAll('.team').forEach(function (t) {
+                t.classList.remove('winner', 'loser');
+                if (newWinningTeam !== null) {
+                  var teamNumber = parseInt(t.getAttribute('data-team'), 10);
+                  t.classList.add(teamNumber === newWinningTeam ? 'winner' : 'loser');
+                }
+              });
+            })
+            .catch(function () {
+              alert('Không lưu được. Vui lòng thử lại.');
+            });
+        });
+      });
+    }
+
+    function renderGames(games) {
+      var active = games.filter(function (g) {
+        return !g.deletedAt;
+      });
+      active.sort(function (a, b) {
+        return b.id - a.id;
+      });
+      gameListEl.innerHTML = '';
+      emptyStateEl.hidden = active.length !== 0;
+      gameListEl.hidden = active.length === 0;
+      gameHintEl.hidden = active.length === 0;
+      active.forEach(function (game) {
+        var row = buildGameRowElement(game);
+        gameListEl.appendChild(row);
+        bindGameRow(row);
+      });
+    }
+
+    GameDays.getOrThrow(dayId)
+      .then(function (day) {
+        titleEl.textContent = day.name;
+        return loadPlayerNames();
+      })
+      .then(function () {
+        // In the shared (Firebase) version the list updates by itself as sets are added or
+        // results marked on any phone.
+        if (BadmintonDb.watchByIndex) {
+          BadmintonDb.watchByIndex('games', 'gameDayId', dayId, function (games) {
+            loadPlayerNames().then(function () {
+              renderGames(games);
+            });
+          });
+        } else {
+          return Games.findAllForDay(dayId).then(renderGames);
+        }
+      })
+      .catch(function (err) {
+        titleEl.textContent = 'Không tìm thấy Ngày Chơi';
+        alert(err.message || 'Could not load this day.');
+      });
+  </script>
+</body>
+</html>
