@@ -649,6 +649,7 @@
             var th = document.createElement('th');
             th.scope = 'col';
             th.textContent = shortLabel;
+            th.setAttribute('aria-label', shareLabel);
             summaryHeadRow.appendChild(th);
             var td = document.createElement('td');
             td.textContent = formatMoney(amount);
@@ -656,7 +657,7 @@
             lines.push(shareLabel + shareSeparator + formatMoney(amount) + ' 💵');
           }
 
-          addSummaryLine('Cầu/Sân/Nước', 'Cầu + Sân + Nước', data.totalPrice, ' = ');
+          addSummaryLine('🏸/🏟️/💧', 'Cầu + Sân + Nước', data.totalPrice, ' = '); // shuttlecock / court / water
           addSummaryLine('Thu VL', 'Đã Thu Vãng Lai', data.guestPaidTotal, ' = ');
           addSummaryLine('Phát Sinh', 'Phát Sinh', data.extraCost, ' = ');
           addSummaryLine('Độ/Set', 'Nước Độ / Set', data.waterRate, ': ');
