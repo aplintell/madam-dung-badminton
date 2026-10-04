@@ -10,8 +10,62 @@
   var auth = firebase.auth();
   var db = firebase.firestore();
   db.settings({ ignoreUndefinedProperties: true, merge: true });
+
+  // ---- Recovering from Firestore's internal error ----
+  // On Safari/WebKit, Firestore sometimes fails with "INTERNAL ASSERTION FAILED: Unexpected state"
+  // (e.g. when the page changes while other phones are changing data); after that it stops
+  // delivering data, so lists stop updating. When that happens the phone's copy is cleared and
+  // the page reloaded once, which loads everything fresh from the server. If it fails again
+  // straight away, the app runs without the phone copy (online only) for a while instead.
+  var RESET_CACHE_KEY = 'madamDung.resetCache';
+  var LAST_RESET_KEY = 'madamDung.lastCacheReset';
+  var ONLINE_ONLY_UNTIL_KEY = 'madamDung.onlineOnlyUntil';
+  var recovering = false;
+
+  // Firestore reports the failure only through its own logger (which firebase.onLog doesn't reach
+  // in these script files) and that ends in console.error, so watch for it there.
+  var consoleError = console.error;
+  console.error = function () {
+    consoleError.apply(console, arguments);
+    var text = Array.prototype.map.call(arguments, function (a) {
+      return a && a.message ? a.message : String(a);
+    }).join(' ');
+    if (/@firebase\/firestore/.test(text) && /INTERNAL ASSERTION FAILED|INTERNAL UNHANDLED ERROR/.test(text)) {
+      recoverFromFirestoreFailure();
+    }
+  };
+
+  function recoverFromFirestoreFailure() {
+    if (recovering) {
+      return;
+    }
+    recovering = true;
+    var now = Date.now();
+    var lastReset = parseInt(load(LAST_RESET_KEY) || '0', 10);
+    if (now - lastReset < 2 * 60 * 1000) {
+      store(ONLINE_ONLY_UNTIL_KEY, String(now + 10 * 60 * 1000));
+    } else {
+      store(RESET_CACHE_KEY, '1');
+    }
+    store(LAST_RESET_KEY, String(now));
+    window.location.reload();
+  }
+
   // Keeps a copy on the phone so the app opens and saves offline; changes sync when back online.
-  var persistence = db.enablePersistence({ synchronizeTabs: true }).catch(function () {});
+  // Single-tab mode (multi-tab sync made the error above much more frequent on Safari). If another
+  // tab already holds the phone's copy, this page simply works online-only.
+  var onlineOnly = parseInt(load(ONLINE_ONLY_UNTIL_KEY) || '0', 10) > Date.now();
+  var persistence;
+  if (onlineOnly) {
+    persistence = Promise.resolve();
+  } else if (load(RESET_CACHE_KEY) === '1') {
+    store(RESET_CACHE_KEY, null);
+    persistence = db.clearPersistence().catch(function () {}).then(function () {
+      return db.enablePersistence();
+    }).catch(function () {});
+  } else {
+    persistence = db.enablePersistence().catch(function () {});
+  }
 
   // Small collections are kept in sync with live listeners and read from the phone's copy, so
   // moving between screens costs (almost) no Firestore reads. Games grow every day, so they're

@@ -48,6 +48,7 @@
   <script src="js/cloud.js"></script>
   <script src="js/db.js"></script>
   <script src="js/services.js"></script>
+  <script src="js/touch-guard.js"></script>
   <script>
     var dayId = parseInt(new URLSearchParams(window.location.search).get('id'), 10);
 
@@ -324,30 +325,20 @@
 
     // Redrawing under a finger would cancel a swipe or double tap, so updates that arrive while
     // the list is being touched wait until the finger lifts.
-    var touching = false;
     var pendingGames = null;
 
-    document.addEventListener('pointerdown', function () {
-      touching = true;
-    }, true);
-    ['pointerup', 'pointercancel'].forEach(function (type) {
-      document.addEventListener(type, function () {
-        touching = false;
-        if (pendingGames) {
-          // Let the row's own handlers (double tap, delete) finish first.
-          setTimeout(function () {
-            if (!touching && pendingGames) {
-              var games = pendingGames;
-              pendingGames = null;
-              renderGames(games);
-            }
-          }, 400);
-        }
-      }, true);
-    });
+    // An update that arrived during a touch is drawn as soon as the touch is over (checked often,
+    // and with a short pause so the row's own double tap / delete handlers finish first).
+    setInterval(function () {
+      if (pendingGames && !TouchGuard.isTouching()) {
+        var games = pendingGames;
+        pendingGames = null;
+        renderGames(games);
+      }
+    }, 500);
 
     function renderGames(games) {
-      if (touching) {
+      if (TouchGuard.isTouching()) {
         pendingGames = games;
         return;
       }

@@ -20,6 +20,7 @@ var FILES = [
   'js/share-image.js',
   'js/html2canvas.min.js',
   'js/pwa.js',
+  'js/touch-guard.js',
   'js/version.js',
   'js/firebase-config.js',
   'js/cloud.js',

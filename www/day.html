@@ -154,6 +154,7 @@
   <script src="js/cloud.js"></script>
   <script src="js/db.js"></script>
   <script src="js/services.js"></script>
+  <script src="js/touch-guard.js"></script>
   <script src="js/back-button.js"></script>
   <script src="js/player-suggest.js"></script>
   <script src="js/share-image.js"></script>
@@ -1079,16 +1080,6 @@
       var AUTO_REFRESH_MS = 10000;
       var latestGames = null;
       var shownSignature = null;
-      var touching = false;
-
-      document.addEventListener('pointerdown', function () {
-        touching = true;
-      }, true);
-      ['pointerup', 'pointercancel'].forEach(function (type) {
-        document.addEventListener(type, function () {
-          touching = false;
-        }, true);
-      });
 
       function gamesSignature(games) {
         return JSON.stringify(games.map(function (g) {
@@ -1103,8 +1094,8 @@
         }
       });
 
-      setInterval(function () {
-        if (!latestGames || touching || gameListEl.querySelector('.swiping')) {
+      function refreshIfChanged() {
+        if (!latestGames || TouchGuard.isTouching()) {
           return;
         }
         var signature = gamesSignature(latestGames);
@@ -1125,7 +1116,15 @@
             return !!g.deletedAt;
           });
         });
-      }, AUTO_REFRESH_MS);
+      }
+
+      setInterval(refreshIfChanged, AUTO_REFRESH_MS);
+      // Coming back to the app (phone unlocked, switched back) shows the latest list straight away.
+      document.addEventListener('visibilitychange', function () {
+        if (!document.hidden) {
+          setTimeout(refreshIfChanged, 1000);
+        }
+      });
     }
     refreshRoster();
   </script>
