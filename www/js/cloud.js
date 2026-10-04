@@ -86,7 +86,7 @@
     loginEl.className = 'login-overlay';
     loginEl.innerHTML =
       '<form class="login-card" novalidate>' +
-      '<h2>Madam Dung Badminton</h2>' +
+      '<h2>Cầu Lông Hóc Môn 246</h2>' +
       (wasSignedInBefore() ? '<p class="login-note">Mật khẩu nhóm đã thay đổi. Vui lòng nhập mật khẩu mới.</p>' : '') +
       '<div class="form-group">' +
       '<label for="groupPassword">Mật khẩu nhóm</label>' +
