@@ -1208,3 +1208,42 @@ body {
   border-radius: 50%;
   animation: loading-spin 0.8s linear infinite;
 }
+
+/* Thêm Set page: player boxes 15% shorter and every text one size smaller */
+.game-form-page .topbar h1 {
+  font-size: 1.05rem;
+}
+
+.game-form-page .team-block h3 {
+  font-size: 0.82rem;
+}
+
+.game-form-page .form-group label {
+  font-size: 0.78rem;
+}
+
+.game-form-page .form-group input[type="text"] {
+  padding-top: 11.5px;
+  padding-bottom: 11.5px;
+  font-size: 0.9rem;
+}
+
+.game-form-page .player-suggestion {
+  font-size: 0.9rem;
+}
+
+.game-form-page .player-suggestion-group {
+  font-size: 0.7rem;
+}
+
+.game-form-page .player-suggestion-empty {
+  font-size: 0.78rem;
+}
+
+.game-form-page .field-error {
+  font-size: 0.74rem;
+}
+
+.game-form-page .primary-button {
+  font-size: 0.9rem;
+}

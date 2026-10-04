@@ -14,7 +14,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="CL Hóc Môn 246">
 </head>
-<body>
+<body class="game-form-page">
   <header class="topbar">
     <a id="backLink" class="back-link" href="index.html">&#8592;</a>
     <h1>Thêm Set</h1>
@@ -25,8 +25,9 @@
 
       <p id="globalError" class="field-error" hidden></p>
 
-      <div class="team-block" id="team1Block">
-        <h3 id="team1Title">Team 1</h3>
+      <!-- The first team is entered as the winner, coloured like a winning team in the list. -->
+      <div class="team-block team-block-win">
+        <h3>Team Thắng</h3>
         <div class="form-group">
           <label for="team1Player1">Lông Thủ 1</label>
           <div class="player-combo">
@@ -45,8 +46,8 @@
         </div>
       </div>
 
-      <div class="team-block" id="team2Block">
-        <h3 id="team2Title">Team 2</h3>
+      <div class="team-block team-block-lose">
+        <h3>Team Thua</h3>
         <div class="form-group">
           <label for="team2Player1">Lông Thủ 1</label>
           <div class="player-combo">
@@ -91,14 +92,6 @@
     var dayPage = (fromPlayer ? 'player-day.html?id=' : 'day.html?id=') + dayId;
     document.getElementById('backLink').setAttribute('href', dayPage);
 
-    // Players enter a set once it's finished: the first team is the winner, coloured like a
-    // winning team in the list, the second like a losing one.
-    if (fromPlayer) {
-      document.getElementById('team1Title').textContent = 'Team Thắng';
-      document.getElementById('team2Title').textContent = 'Team Thua';
-      document.getElementById('team1Block').classList.add('team-block-win');
-      document.getElementById('team2Block').classList.add('team-block-lose');
-    }
 
     var form = document.getElementById('newGameForm');
     var saveLoading = document.getElementById('saveLoading');
