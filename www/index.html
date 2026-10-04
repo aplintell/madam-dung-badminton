@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+  <title>Madam Dung Badminton</title>
+  <link rel="stylesheet" href="css/style.css">
+  <meta name="theme-color" content="#0f1115">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" type="image/png" href="img/icons/icon-192.png">
+  <link rel="apple-touch-icon" href="img/icons/icon-180.png">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Madam Dung">
+</head>
+<body>
+  <header class="topbar">
+    <h1>Madam Dung Badminton</h1>
+  </header>
+
+  <main class="container">
+    <div id="emptyState" class="empty-state" hidden>
+      <p>Chưa có Tháng nào.</p>
+      <p>Bấm dấu + góc dưới màn hình để thêm Tháng mới.</p>
+    </div>
+
+    <div id="monthList" class="day-list" hidden></div>
+  </main>
+
+  <button id="addMonthBtn" class="fab" type="button" aria-label="Tạo Tháng Mới"><span class="fab-plus" aria-hidden="true"></span></button>
+
+  <div id="addMonthModal" class="modal-overlay" hidden>
+    <form id="addMonthForm" class="modal-card">
+      <h2>Tạo Tháng Mới</h2>
+      <div class="form-group">
+        <label for="monthInput">Tháng</label>
+        <input type="month" id="monthInput" required>
+      </div>
+      <p id="addMonthError" class="field-error" hidden></p>
+      <div class="modal-actions">
+        <button type="button" id="cancelAddMonthBtn" class="secondary-button">Cancel</button>
+        <button type="submit" class="primary-button">Tạo</button>
+      </div>
+    </form>
+  </div>
+
+  <script src="js/pwa.js"></script>
+  <script src="js/db.js"></script>
+  <script src="js/services.js"></script>
+  <script src="js/back-button.js"></script>
+  <script>
+    var emptyStateEl = document.getElementById('emptyState');
+    var monthListEl = document.getElementById('monthList');
+    var addMonthBtn = document.getElementById('addMonthBtn');
+    var addMonthModal = document.getElementById('addMonthModal');
+    var addMonthForm = document.getElementById('addMonthForm');
+    var monthInput = document.getElementById('monthInput');
+    var addMonthError = document.getElementById('addMonthError');
+
+    function openMonth(monthKey) {
+      window.location.href = 'month.html?month=' + monthKey;
+    }
+
+    function loadMonths() {
+      Promise.all([Months.findAll(), BadmintonDb.getAll('gameDays'), BadmintonDb.getAll('members')]).then(function (results) {
+        var months = results[0];
+        var memberCountByMonth = {};
+        results[2].forEach(function (member) {
+          memberCountByMonth[member.monthKey] = (memberCountByMonth[member.monthKey] || 0) + 1;
+        });
+        var dayCountByMonth = {};
+        results[1].forEach(function (day) {
+          var key = Months.keyOfDate(day.date);
+          dayCountByMonth[key] = (dayCountByMonth[key] || 0) + 1;
+        });
+
+        monthListEl.innerHTML = '';
+        if (months.length === 0) {
+          emptyStateEl.hidden = false;
+          monthListEl.hidden = true;
+          return;
+        }
+        emptyStateEl.hidden = true;
+        monthListEl.hidden = false;
+        months.forEach(function (month) {
+          var row = buildMonthRow(month, memberCountByMonth[month.key] || 0, dayCountByMonth[month.key] || 0);
+          monthListEl.appendChild(row);
+          bindMonthSwipe(row, month);
+        });
+      });
+    }
+
+    function buildMonthRow(month, memberCount, dayCount) {
+      var row = document.createElement('div');
+      row.className = 'day-row';
+
+      var bg = document.createElement('div');
+      bg.className = 'day-row-bg';
+      bg.setAttribute('aria-hidden', 'true');
+      bg.textContent = '🗑️ Xóa';
+      row.appendChild(bg);
+
+      var a = document.createElement('a');
+      a.className = 'day-card';
+      a.href = 'month.html?month=' + month.key;
+
+      var nameEl = document.createElement('div');
+      nameEl.className = 'day-date';
+      nameEl.textContent = month.name;
+
+      var metaEl = document.createElement('div');
+      metaEl.className = 'day-meta';
+      metaEl.textContent = memberCount + ' Thành Viên • ' + dayCount + ' Ngày Chơi';
+
+      a.appendChild(nameEl);
+      a.appendChild(metaEl);
+      row.appendChild(a);
+
+      return row;
+    }
+
+    function bindMonthSwipe(row, month) {
+      var card = row.querySelector('.day-card');
+      var DELETE_THRESHOLD = 90;
+      var pointerId = null;
+      var startX = 0;
+      var startY = 0;
+      var currentX = 0;
+      var dragging = false;
+      var moved = false;
+
+      row.addEventListener('pointerdown', function (e) {
+        if (e.pointerType === 'mouse' && e.button !== 0) {
+          return;
+        }
+        dragging = true;
+        moved = false;
+        currentX = 0;
+        startX = e.clientX;
+        startY = e.clientY;
+        pointerId = e.pointerId;
+        card.style.transition = 'none';
+      });
+
+      row.addEventListener('pointermove', function (e) {
+        if (!dragging || e.pointerId !== pointerId) {
+          return;
+        }
+        var dx = e.clientX - startX;
+        var dy = e.clientY - startY;
+        if (!moved) {
+          if (Math.abs(dx) < 10) {
+            return;
+          }
+          if (Math.abs(dy) > Math.abs(dx)) {
+            dragging = false;
+            return;
+          }
+          moved = true;
+          try {
+            row.setPointerCapture(pointerId);
+          } catch (err) {
+            // ignore if pointer capture isn't supported for this pointer
+          }
+        }
+        currentX = dx;
+        card.style.transform = 'translateX(' + currentX + 'px)';
+        row.classList.toggle('swiping', Math.abs(currentX) > 10);
+      });
+
+      function endDrag() {
+        if (!dragging) {
+          return;
+        }
+        dragging = false;
+        card.style.transition = '';
+        if (moved) {
+          row.dataset.justDragged = '1';
+        }
+        if (Math.abs(currentX) > DELETE_THRESHOLD) {
+          confirmAndDelete(currentX > 0 ? 1 : -1);
+        } else {
+          card.style.transform = '';
+          row.classList.remove('swiping');
+        }
+        currentX = 0;
+      }
+
+      row.addEventListener('pointerup', endDrag);
+      row.addEventListener('pointercancel', endDrag);
+
+      row.addEventListener('click', function (e) {
+        if (row.dataset.justDragged) {
+          e.stopPropagation();
+          e.preventDefault();
+          delete row.dataset.justDragged;
+        }
+      }, true);
+
+      function confirmAndDelete(direction) {
+        if (!window.confirm('Xóa "' + month.name + '"? Toàn bộ Thành Viên, Ngày Chơi và Set trong tháng này sẽ bị xóa vĩnh viễn.')) {
+          card.style.transform = '';
+          row.classList.remove('swiping');
+          return;
+        }
+        card.style.transition = 'transform 0.2s ease';
+        card.style.transform = 'translateX(' + (direction > 0 ? '100%' : '-100%') + ')';
+
+        Months.remove(month)
+          .then(function () {
+            setTimeout(function () {
+              row.remove();
+              if (!monthListEl.querySelector('.day-row')) {
+                emptyStateEl.hidden = false;
+                monthListEl.hidden = true;
+              }
+            }, 200);
+          })
+          .catch(function () {
+            alert('Không xóa được tháng này. Vui lòng thử lại.');
+            card.style.transform = '';
+            row.classList.remove('swiping');
+          });
+      }
+    }
+
+    addMonthBtn.addEventListener('click', function () {
+      // Suggest the first month from now on that doesn't exist yet.
+      var existing = {};
+      monthListEl.querySelectorAll('.day-card').forEach(function (a) {
+        existing[new URLSearchParams(a.search).get('month')] = true;
+      });
+      var suggested = Months.currentKey();
+      while (existing[suggested]) {
+        suggested = Months.nextKey(suggested);
+      }
+      monthInput.value = suggested;
+      addMonthError.hidden = true;
+      addMonthModal.hidden = false;
+    });
+
+    document.getElementById('cancelAddMonthBtn').addEventListener('click', function () {
+      addMonthModal.hidden = true;
+    });
+
+    addMonthModal.addEventListener('click', function (e) {
+      if (e.target === addMonthModal) {
+        addMonthModal.hidden = true;
+      }
+    });
+
+    addMonthForm.addEventListener('submit', function (e) {
+      e.preventDefault();
+      var monthKey = monthInput.value;
+      if (!Months.isValidKey(monthKey)) {
+        addMonthError.textContent = 'Vui lòng chọn tháng';
+        addMonthError.hidden = false;
+        return;
+      }
+      Months.create(monthKey).then(function (month) {
+        openMonth(month.key);
+      }).catch(function (err) {
+        addMonthError.textContent = err.message || 'Không tạo được tháng. Vui lòng thử lại.';
+        addMonthError.hidden = false;
+      });
+    });
+
+    loadMonths();
+  </script>
+</body>
+</html>

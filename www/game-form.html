@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+  <title>Thêm Set</title>
+  <link rel="stylesheet" href="css/style.css">
+  <meta name="theme-color" content="#0f1115">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" type="image/png" href="img/icons/icon-192.png">
+  <link rel="apple-touch-icon" href="img/icons/icon-180.png">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Madam Dung">
+</head>
+<body>
+  <header class="topbar">
+    <a id="backLink" class="back-link" href="index.html">&#8592;</a>
+    <h1>Thêm Set</h1>
+  </header>
+
+  <main class="container">
+    <form id="newGameForm">
+
+      <p id="globalError" class="field-error" hidden></p>
+
+      <div class="team-block">
+        <h3>Team 1</h3>
+        <div class="form-group">
+          <label for="team1Player1">Lông Thủ 1</label>
+          <div class="player-combo">
+            <input type="text" id="team1Player1" autocomplete="off">
+            <ul class="player-suggestions" id="team1Player1Suggestions" hidden></ul>
+          </div>
+          <div class="field-error" id="team1Player1Error" hidden></div>
+        </div>
+        <div class="form-group">
+          <label for="team1Player2">Lông Thủ 2</label>
+          <div class="player-combo">
+            <input type="text" id="team1Player2" autocomplete="off">
+            <ul class="player-suggestions" id="team1Player2Suggestions" hidden></ul>
+          </div>
+          <div class="field-error" id="team1Player2Error" hidden></div>
+        </div>
+      </div>
+
+      <div class="team-block">
+        <h3>Team 2</h3>
+        <div class="form-group">
+          <label for="team2Player1">Lông Thủ 1</label>
+          <div class="player-combo">
+            <input type="text" id="team2Player1" autocomplete="off">
+            <ul class="player-suggestions" id="team2Player1Suggestions" hidden></ul>
+          </div>
+          <div class="field-error" id="team2Player1Error" hidden></div>
+        </div>
+        <div class="form-group">
+          <label for="team2Player2">Lông Thủ 2</label>
+          <div class="player-combo">
+            <input type="text" id="team2Player2" autocomplete="off">
+            <ul class="player-suggestions" id="team2Player2Suggestions" hidden></ul>
+          </div>
+          <div class="field-error" id="team2Player2Error" hidden></div>
+        </div>
+      </div>
+
+      <button type="submit" class="primary-button">Thêm Set</button>
+    </form>
+  </main>
+
+  <script src="js/pwa.js"></script>
+  <script src="js/db.js"></script>
+  <script src="js/services.js"></script>
+  <script src="js/back-button.js"></script>
+  <script src="js/player-suggest.js"></script>
+  <script>
+    var dayId = parseInt(new URLSearchParams(window.location.search).get('dayId'), 10);
+    document.getElementById('backLink').setAttribute('href', 'day.html?id=' + dayId);
+
+    var form = document.getElementById('newGameForm');
+    var globalError = document.getElementById('globalError');
+    var fieldIds = ['team1Player1', 'team1Player2', 'team2Player1', 'team2Player2'];
+
+    var allPlayers = [];
+    var hideTimers = {};
+
+    // Only today's TV Cố Định (Chơi) and TV Vãng Lai can be put in a set.
+    function refreshPlayers() {
+      return Promise.all([Players.findAll(), GameDays.playableToday(dayId)]).then(function (results) {
+        var playableIds = {};
+        results[1].forEach(function (p) {
+          playableIds[p.playerId] = true;
+        });
+        allPlayers = results[0].filter(function (p) {
+          return playableIds[p.id];
+        });
+      });
+    }
+
+    // Names already typed into the other three boxes, so each player is offered only once.
+    function namesChosenElsewhere(fieldId) {
+      var chosen = {};
+      fieldIds.forEach(function (id) {
+        if (id !== fieldId) {
+          chosen[Players.normalize(document.getElementById(id).value).toLowerCase()] = true;
+        }
+      });
+      return chosen;
+    }
+
+    function closeOtherSuggestions(exceptFieldId) {
+      fieldIds.forEach(function (id) {
+        if (id !== exceptFieldId) {
+          document.getElementById(id + 'Suggestions').hidden = true;
+        }
+      });
+    }
+
+    function renderSuggestions(fieldId) {
+      var input = document.getElementById(fieldId);
+      var list = document.getElementById(fieldId + 'Suggestions');
+      var query = PlayerSuggest.fold(input.value.trim());
+      var chosen = namesChosenElsewhere(fieldId);
+      var matches = allPlayers.filter(function (p) {
+        return !chosen[p.name.toLowerCase()] && (!query || PlayerSuggest.fold(p.name).indexOf(query) !== -1);
+      });
+
+      list.innerHTML = '';
+      if (matches.length === 0) {
+        var empty = document.createElement('li');
+        empty.className = 'player-suggestion-empty';
+        empty.textContent = allPlayers.length === 0
+          ? 'Chưa có TV Cố Định / TV Vãng Lai hôm nay'
+          : 'Không có Lông Thủ phù hợp';
+        list.appendChild(empty);
+      } else {
+        matches.forEach(function (player) {
+          list.appendChild(buildSuggestionRow(fieldId, player));
+        });
+      }
+      list.hidden = false;
+    }
+
+    function selectPlayer(fieldId, name) {
+      document.getElementById(fieldId).value = name;
+      document.getElementById(fieldId + 'Suggestions').hidden = true;
+    }
+
+    // A suggestion is just the name: players can't be renamed or deleted from this screen.
+    function buildSuggestionRow(fieldId, player) {
+      var li = document.createElement('li');
+      li.className = 'player-suggestion';
+      li.setAttribute('data-player-id', String(player.id));
+
+      var nameSpan = document.createElement('span');
+      nameSpan.className = 'player-suggestion-name';
+      nameSpan.textContent = player.name;
+      li.addEventListener('click', function () {
+        clearTimeout(hideTimers[fieldId]);
+        selectPlayer(fieldId, player.name);
+      });
+      li.appendChild(nameSpan);
+      return li;
+    }
+
+    var listInteracting = {};
+
+    fieldIds.forEach(function (fieldId) {
+      var input = document.getElementById(fieldId);
+      var list = document.getElementById(fieldId + 'Suggestions');
+
+      input.addEventListener('focus', function () {
+        clearTimeout(hideTimers[fieldId]);
+        closeOtherSuggestions(fieldId);
+        renderSuggestions(fieldId);
+      });
+      input.addEventListener('input', function () {
+        renderSuggestions(fieldId);
+      });
+      input.addEventListener('blur', function () {
+        if (listInteracting[fieldId]) {
+          return;
+        }
+        hideTimers[fieldId] = setTimeout(function () {
+          list.hidden = true;
+        }, 150);
+      });
+      // While a touch is down anywhere in the list, ignore blur entirely — Android fires a
+      // spurious blur on the input partway through a press on the name text, and that would
+      // otherwise close the list before the tap lands.
+      list.addEventListener('pointerdown', function () {
+        listInteracting[fieldId] = true;
+        clearTimeout(hideTimers[fieldId]);
+      }, true);
+      list.addEventListener('pointerup', function () {
+        listInteracting[fieldId] = false;
+      }, true);
+      list.addEventListener('pointercancel', function () {
+        listInteracting[fieldId] = false;
+      }, true);
+    });
+
+    refreshPlayers();
+
+    function clearErrors() {
+      globalError.hidden = true;
+      fieldIds.forEach(function (id) {
+        var errEl = document.getElementById(id + 'Error');
+        errEl.hidden = true;
+        errEl.textContent = '';
+      });
+    }
+
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      clearErrors();
+
+      var values = {};
+      var hasBlank = false;
+      fieldIds.forEach(function (id) {
+        var raw = document.getElementById(id).value.trim();
+        values[id] = raw;
+        if (!raw) {
+          var errEl = document.getElementById(id + 'Error');
+          errEl.textContent = 'Enter a player name';
+          errEl.hidden = false;
+          hasBlank = true;
+        }
+      });
+      if (hasBlank) {
+        return;
+      }
+
+      var playableNames = {};
+      allPlayers.forEach(function (p) {
+        playableNames[p.name.toLowerCase()] = true;
+      });
+      var hasOutsider = false;
+      fieldIds.forEach(function (id) {
+        if (!playableNames[Players.normalize(values[id]).toLowerCase()]) {
+          var errEl = document.getElementById(id + 'Error');
+          errEl.textContent = 'Không có trong TV Cố Định / TV Vãng Lai hôm nay';
+          errEl.hidden = false;
+          hasOutsider = true;
+        }
+      });
+      if (hasOutsider) {
+        return;
+      }
+
+      Games.addGame(dayId, values.team1Player1, values.team1Player2, values.team2Player1, values.team2Player2)
+        .then(function () {
+          window.location.href = 'day.html?id=' + dayId;
+        })
+        .catch(function (err) {
+          globalError.textContent = err.message;
+          globalError.hidden = false;
+        });
+    });
+  </script>
+</body>
+</html>

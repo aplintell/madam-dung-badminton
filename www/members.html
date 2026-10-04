@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+  <title>Madam Dung Badminton</title>
+  <link rel="stylesheet" href="css/style.css">
+  <meta name="theme-color" content="#0f1115">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" type="image/png" href="img/icons/icon-192.png">
+  <link rel="apple-touch-icon" href="img/icons/icon-180.png">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Madam Dung">
+</head>
+<body>
+  <header class="topbar">
+    <a id="backLink" class="back-link" href="index.html">&#8592;</a>
+    <h1 id="monthTitle">Thành Viên Cố Định</h1>
+  </header>
+
+  <main class="container">
+    <div id="emptyState" class="empty-state" hidden>
+      <p>Chưa có Thành Viên nào.</p>
+      <p>Bấm dấu + góc dưới màn hình để thêm Thành Viên.</p>
+    </div>
+
+    <div id="memberList" class="game-list" hidden></div>
+
+    <p id="memberHint" class="game-hint" hidden>Giữ để sửa, vuốt sang trái hoặc phải để xóa</p>
+  </main>
+
+  <button id="feeBtn" class="fab fab-left" type="button" aria-label="Chi Phí Cố Định">
+    <span class="fab-center-icon" aria-hidden="true">💵</span>
+  </button>
+
+  <button id="addMemberBtn" class="fab" type="button" aria-label="Thêm Thành Viên"><span class="fab-plus" aria-hidden="true"></span></button>
+
+  <div id="feeModal" class="modal-overlay" hidden>
+    <div class="modal-card">
+      <h2 id="feeTitle">Chi Phí Thành Viên Cố Định</h2>
+
+      <form id="feeForm" novalidate>
+        <div class="form-group">
+          <label for="feeInput">Phí Thuê Sân / Giờ</label>
+          <input type="number" id="feeInput" inputmode="decimal" min="0" step="any" placeholder="0" enterkeyhint="go">
+        </div>
+        <p id="feeError" class="field-error" hidden></p>
+        <div class="modal-actions">
+          <button type="button" id="cancelFeeBtn" class="secondary-button">Cancel</button>
+          <button type="submit" class="primary-button">Tính Tiền</button>
+        </div>
+      </form>
+
+      <div id="feeResult" hidden>
+        <div id="feeSummary" class="settle-summary"></div>
+        <table class="settle-table member-fee-table">
+          <thead>
+            <tr>
+              <th scope="col" class="col-name">Tên</th>
+              <th scope="col" class="col-num">Thứ</th>
+              <th scope="col" class="col-num">Buổi</th>
+              <th scope="col" class="col-num col-total">💵</th>
+            </tr>
+          </thead>
+          <tbody id="feeBody"></tbody>
+        </table>
+        <div class="modal-actions">
+          <button type="button" id="shareFeeBtn" class="primary-button">Share</button>
+          <button type="button" id="closeFeeBtn" class="secondary-button">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="memberModal" class="modal-overlay" hidden>
+    <form id="memberForm" class="modal-card" novalidate>
+      <h2 id="memberModalTitle">Thêm Thành Viên</h2>
+      <div class="form-group">
+        <label for="memberName">Tên</label>
+        <input type="text" id="memberName" autocomplete="off" enterkeyhint="done">
+      </div>
+      <div class="form-group">
+        <label>Ngày chơi</label>
+        <div id="weekdayChoices" class="weekday-choices"></div>
+      </div>
+      <p id="memberError" class="field-error" hidden></p>
+      <div class="modal-actions">
+        <button type="button" id="cancelMemberBtn" class="secondary-button">Cancel</button>
+        <button type="submit" class="primary-button">Lưu</button>
+      </div>
+    </form>
+  </div>
+
+  <div id="shareLoading" class="loading-overlay" role="status" aria-live="polite" hidden>
+    <div class="loading-spinner" aria-hidden="true"></div>
+    <p>Đang chuẩn bị ảnh...</p>
+  </div>
+
+  <script src="js/html2canvas.min.js"></script>
+  <script src="js/pwa.js"></script>
+  <script src="js/db.js"></script>
+  <script src="js/services.js"></script>
+  <script src="js/back-button.js"></script>
+  <script src="js/player-suggest.js"></script>
+  <script src="js/share-image.js"></script>
+  <script>
+    var monthKey = new URLSearchParams(window.location.search).get('month');
+    if (!Months.isValidKey(monthKey)) {
+      monthKey = Months.currentKey();
+    }
+    document.getElementById('monthTitle').textContent = 'Thành Viên Cố Định - ' + Months.formatName(monthKey);
+    document.getElementById('backLink').setAttribute('href', 'month.html?month=' + monthKey);
+
+    var emptyStateEl = document.getElementById('emptyState');
+    var memberListEl = document.getElementById('memberList');
+    var memberHintEl = document.getElementById('memberHint');
+    var memberModal = document.getElementById('memberModal');
+    var memberForm = document.getElementById('memberForm');
+    var memberModalTitle = document.getElementById('memberModalTitle');
+    var memberNameInput = document.getElementById('memberName');
+    var weekdayChoicesEl = document.getElementById('weekdayChoices');
+    var memberErrorEl = document.getElementById('memberError');
+
+    // The member being edited, or null while adding a new one.
+    var editingMember = null;
+
+    // Releasing a long press fires a click wherever the finger lifts, which by then is the modal
+    // backdrop that just opened; swallow that one click so the modal doesn't close straight away.
+    var swallowNextClick = false;
+    document.addEventListener('pointerdown', function () {
+      swallowNextClick = false;
+    }, true);
+    document.addEventListener('click', function (e) {
+      if (swallowNextClick) {
+        swallowNextClick = false;
+        e.preventDefault();
+        e.stopPropagation();
+      }
+    }, true);
+
+    Members.WEEKDAYS.forEach(function (d) {
+      var label = document.createElement('label');
+      label.className = 'weekday-choice';
+      var box = document.createElement('input');
+      box.type = 'checkbox';
+      box.value = String(d);
+      var text = document.createElement('span');
+      text.textContent = 'Thứ ' + d;
+      label.appendChild(box);
+      label.appendChild(text);
+      weekdayChoicesEl.appendChild(label);
+    });
+
+    function setListVisibility(hasMembers) {
+      emptyStateEl.hidden = hasMembers;
+      memberListEl.hidden = !hasMembers;
+      memberHintEl.hidden = !hasMembers;
+    }
+
+    function loadMembers() {
+      return Members.findAllForMonth(monthKey).then(function (members) {
+        memberListEl.innerHTML = '';
+        setListVisibility(members.length > 0);
+        members.forEach(function (member) {
+          var row = buildMemberRow(member);
+          memberListEl.appendChild(row);
+          bindMemberRow(row, member);
+        });
+      });
+    }
+
+    function buildMemberRow(member) {
+      var row = document.createElement('div');
+      row.className = 'game-row member-row';
+
+      var bg = document.createElement('div');
+      bg.className = 'game-row-bg';
+      bg.setAttribute('aria-hidden', 'true');
+      bg.textContent = '🗑️ Xóa';
+      row.appendChild(bg);
+
+      // e.g. "Dung - Thứ 2, 4, 6"
+      var content = document.createElement('div');
+      content.className = 'member-row-content';
+      var nameEl = document.createElement('span');
+      nameEl.className = 'member-name';
+      nameEl.textContent = member.name;
+      var daysEl = document.createElement('span');
+      daysEl.className = 'member-days';
+      daysEl.textContent = ' - ' + Members.formatWeekdays(member.weekdays);
+      content.appendChild(nameEl);
+      content.appendChild(daysEl);
+      row.appendChild(content);
+
+      return row;
+    }
+
+    function bindMemberRow(row, member) {
+      var content = row.querySelector('.member-row-content');
+      var DELETE_THRESHOLD = 90;
+      var LONG_PRESS_MS = 500;
+      var pointerId = null;
+      var startX = 0;
+      var startY = 0;
+      var currentX = 0;
+      var dragging = false;
+      var moved = false;
+      var longPressTimer = null;
+
+      function cancelLongPress() {
+        clearTimeout(longPressTimer);
+        longPressTimer = null;
+      }
+
+      // Stops the WebView's own long-press menu / text selection from fighting the edit gesture.
+      row.addEventListener('contextmenu', function (e) {
+        e.preventDefault();
+      });
+
+      row.addEventListener('pointerdown', function (e) {
+        if (e.pointerType === 'mouse' && e.button !== 0) {
+          return;
+        }
+        dragging = true;
+        moved = false;
+        currentX = 0;
+        startX = e.clientX;
+        startY = e.clientY;
+        pointerId = e.pointerId;
+        content.style.transition = 'none';
+        cancelLongPress();
+        longPressTimer = setTimeout(function () {
+          longPressTimer = null;
+          dragging = false;
+          swallowNextClick = true;
+          if (navigator.vibrate) {
+            navigator.vibrate(30);
+          }
+          openMemberModal(member);
+        }, LONG_PRESS_MS);
+      });
+
+      row.addEventListener('pointermove', function (e) {
+        if (!dragging || e.pointerId !== pointerId) {
+          return;
+        }
+        var dx = e.clientX - startX;
+        var dy = e.clientY - startY;
+        if (!moved) {
+          if (Math.abs(dx) < 10 && Math.abs(dy) < 10) {
+            return;
+          }
+          cancelLongPress();
+          if (Math.abs(dy) > Math.abs(dx)) {
+            dragging = false;
+            return;
+          }
+          moved = true;
+          try {
+            row.setPointerCapture(pointerId);
+          } catch (err) {
+            // ignore if pointer capture isn't supported for this pointer
+          }
+        }
+        currentX = dx;
+        content.style.transform = 'translateX(' + currentX + 'px)';
+        row.classList.toggle('swiping', Math.abs(currentX) > 10);
+      });
+
+      function endDrag() {
+        cancelLongPress();
+        if (!dragging) {
+          return;
+        }
+        dragging = false;
+        content.style.transition = '';
+        if (Math.abs(currentX) > DELETE_THRESHOLD) {
+          confirmAndDelete(currentX > 0 ? 1 : -1);
+        } else {
+          content.style.transform = '';
+          row.classList.remove('swiping');
+        }
+        currentX = 0;
+      }
+
+      row.addEventListener('pointerup', endDrag);
+      row.addEventListener('pointercancel', endDrag);
+
+      function confirmAndDelete(direction) {
+        if (!window.confirm('Xóa Thành Viên "' + member.name + '"?')) {
+          content.style.transform = '';
+          row.classList.remove('swiping');
+          return;
+        }
+        content.style.transition = 'transform 0.2s ease';
+        content.style.transform = 'translateX(' + (direction > 0 ? '100%' : '-100%') + ')';
+
+        Members.remove(member.id)
+          .then(function () {
+            setTimeout(function () {
+              row.remove();
+              setListVisibility(!!memberListEl.querySelector('.member-row'));
+            }, 200);
+          })
+          .catch(function () {
+            alert('Không xóa được Thành Viên. Vui lòng thử lại.');
+            content.style.transform = '';
+            row.classList.remove('swiping');
+          });
+      }
+    }
+
+    function openMemberModal(member) {
+      editingMember = member || null;
+      memberModalTitle.textContent = member ? 'Sửa Thành Viên' : 'Thêm Thành Viên';
+      memberNameInput.value = member ? member.name : '';
+      weekdayChoicesEl.querySelectorAll('input').forEach(function (box) {
+        // A new member defaults to every day (Thứ 2, 4, 6).
+        box.checked = member ? member.weekdays.indexOf(parseInt(box.value, 10)) !== -1 : true;
+      });
+      memberErrorEl.hidden = true;
+      memberModal.hidden = false;
+      if (!member) {
+        memberNameInput.focus();
+      }
+    }
+
+    // Suggests players who aren't members of this month yet (plus the one being edited).
+    var memberSuggest = PlayerSuggest.attach(memberNameInput, function () {
+      return Promise.all([Players.findAll(), Members.findAllForMonth(monthKey)]).then(function (results) {
+        var taken = {};
+        results[1].forEach(function (m) {
+          if (!editingMember || m.id !== editingMember.id) {
+            taken[m.playerId] = true;
+          }
+        });
+        return results[0].filter(function (p) {
+          return !taken[p.id];
+        }).map(function (p) {
+          return p.name;
+        });
+      });
+    });
+
+    function closeMemberModal() {
+      memberSuggest.hide();
+      memberModal.hidden = true;
+      editingMember = null;
+    }
+
+    document.getElementById('addMemberBtn').addEventListener('click', function () {
+      openMemberModal(null);
+    });
+
+    document.getElementById('cancelMemberBtn').addEventListener('click', closeMemberModal);
+
+    memberModal.addEventListener('click', function (e) {
+      if (e.target === memberModal) {
+        closeMemberModal();
+      }
+    });
+
+    memberForm.addEventListener('submit', function (e) {
+      e.preventDefault();
+      var weekdays = [];
+      weekdayChoicesEl.querySelectorAll('input:checked').forEach(function (box) {
+        weekdays.push(parseInt(box.value, 10));
+      });
+      Members.save(monthKey, memberNameInput.value, weekdays, editingMember ? editingMember.id : undefined)
+        .then(function () {
+          closeMemberModal();
+          return loadMembers();
+        })
+        .catch(function (err) {
+          memberErrorEl.textContent = err.message || 'Không lưu được Thành Viên. Vui lòng thử lại.';
+          memberErrorEl.hidden = false;
+        });
+    });
+
+    // ---- Chi Phí Cố Định ----
+
+    var feeModal = document.getElementById('feeModal');
+    var feeForm = document.getElementById('feeForm');
+    var feeInput = document.getElementById('feeInput');
+    var feeError = document.getElementById('feeError');
+    var feeResult = document.getElementById('feeResult');
+    var feeSummary = document.getElementById('feeSummary');
+    var feeBody = document.getElementById('feeBody');
+
+    // "2026-10" -> "Chi Phí Thành Viên Cố Định Tháng 10/26"
+    document.getElementById('feeTitle').textContent = 'Chi Phí Thành Viên Cố Định Tháng '
+      + monthKey.slice(5, 7) + '/' + monthKey.slice(2, 4);
+
+    function formatMoney(n) {
+      return Math.round(n).toLocaleString();
+    }
+
+    function showFeeForm() {
+      feeError.hidden = true;
+      feeForm.hidden = false;
+      feeResult.hidden = true;
+    }
+
+    function closeFeeModal() {
+      feeModal.hidden = true;
+    }
+
+    document.getElementById('feeBtn').addEventListener('click', function () {
+      showFeeForm();
+      feeModal.hidden = false;
+      Members.courtRateFor(monthKey).then(function (rate) {
+        feeInput.value = String(rate);
+      });
+    });
+
+    document.getElementById('cancelFeeBtn').addEventListener('click', closeFeeModal);
+    document.getElementById('closeFeeBtn').addEventListener('click', closeFeeModal);
+    // ---- Share: a picture of the whole Chi Phí Thành Viên Cố Định card, then the bank QR ----
+
+    var shareFeeBtn = document.getElementById('shareFeeBtn');
+    var feeCardEl = feeModal.querySelector('.modal-card');
+    var shareLoading = ShareImage.createLoading(document.getElementById('shareLoading'), shareFeeBtn);
+
+    // Plain-text version of the two tables, used if the picture can't be made.
+    function feeShareText() {
+      var lines = [document.getElementById('feeTitle').textContent];
+      feeModal.querySelectorAll('#feeResult tr').forEach(function (tr) {
+        lines.push(Array.prototype.map.call(tr.children, function (c) {
+          return c.textContent;
+        }).join(' | '));
+      });
+      return lines.join('\n');
+    }
+
+    shareFeeBtn.addEventListener('click', function () {
+      var title = document.getElementById('feeTitle').textContent;
+      if (typeof html2canvas !== 'function') {
+        ShareImage.shareText(title, feeShareText());
+        return;
+      }
+      if (shareFeeBtn.disabled) {
+        return;
+      }
+      shareLoading.show();
+      // html2canvas blocks the main thread while it renders, so give the spinner a frame to paint first.
+      setTimeout(function () {
+        ShareImage.renderModalCard(feeCardEl, 'feeModal', '#feeResult .modal-actions')
+          .then(function (blob) {
+            if (!blob) {
+              throw new Error('Could not render the fee card');
+            }
+            return ShareImage.shareImages([{ blob: blob, fileName: ShareImage.toSafeFileName(title) }], title, shareLoading.hide);
+          })
+          .catch(function () {
+            shareLoading.hide();
+            ShareImage.shareText(title, feeShareText());
+          });
+      }, 50);
+    });
+
+    feeModal.addEventListener('click', function (e) {
+      if (e.target === feeModal) {
+        closeFeeModal();
+      }
+    });
+
+    feeForm.addEventListener('submit', function (e) {
+      e.preventDefault();
+      var rate = parseFloat(feeInput.value);
+      if (!(rate > 0)) {
+        feeError.textContent = 'Vui lòng nhập Phí Thuê Sân / Giờ';
+        feeError.hidden = false;
+        return;
+      }
+      feeInput.blur();
+      Members.saveCourtRate(monthKey, rate)
+        .then(function () {
+          return Members.settleFee(monthKey, rate);
+        })
+        .then(renderFeeResult)
+        .catch(function (err) {
+          feeError.textContent = err.message || 'Không tính được Chi Phí Cố Định. Vui lòng thử lại.';
+          feeError.hidden = false;
+        });
+    });
+
+    // cells: [tag, className, text]; the first cell is the row header.
+    function buildRow(cells) {
+      var tr = document.createElement('tr');
+      cells.forEach(function (c) {
+        var cell = document.createElement(c[0]);
+        cell.className = c[1];
+        cell.textContent = c[2];
+        tr.appendChild(cell);
+      });
+      tr.firstChild.setAttribute('scope', 'row');
+      return tr;
+    }
+
+    // Thứ | Số Giờ | Chi Phí | Số Buổi | Tổng, one row per court weekday, then the grand total.
+    function buildCourtTable(data) {
+      var table = document.createElement('table');
+      table.className = 'settle-table court-table';
+      var thead = document.createElement('thead');
+      var headRow = document.createElement('tr');
+      [['col-name', 'Thứ'], ['col-num', 'Số Giờ'], ['col-num', 'Chi Phí'], ['col-num', 'Số Buổi'], ['col-num col-total', 'Tổng']].forEach(function (h) {
+        var th = document.createElement('th');
+        th.scope = 'col';
+        th.className = h[0];
+        th.textContent = h[1];
+        headRow.appendChild(th);
+      });
+      thead.appendChild(headRow);
+      table.appendChild(thead);
+
+      var tbody = document.createElement('tbody');
+      data.courtRows.forEach(function (r) {
+        tbody.appendChild(buildRow([
+          ['th', 'col-name', String(r.weekday)],
+          ['td', 'col-num', String(r.hours)],
+          ['td', 'col-num', formatMoney(r.cost)],
+          ['td', 'col-num', String(r.sessions)],
+          ['td', 'col-num col-total', formatMoney(r.total)]
+        ]));
+      });
+      table.appendChild(tbody);
+
+      var tfoot = document.createElement('tfoot');
+      var totalRow = document.createElement('tr');
+      var label = document.createElement('th');
+      label.scope = 'row';
+      label.colSpan = 4;
+      label.className = 'col-name';
+      label.textContent = 'Tổng';
+      var value = document.createElement('td');
+      value.className = 'col-num col-total';
+      value.textContent = formatMoney(data.courtTotal);
+      totalRow.appendChild(label);
+      totalRow.appendChild(value);
+      tfoot.appendChild(totalRow);
+      table.appendChild(tfoot);
+      return table;
+    }
+
+    function renderFeeResult(data) {
+      feeSummary.innerHTML = '';
+      feeSummary.appendChild(buildCourtTable(data));
+
+      feeBody.innerHTML = '';
+      data.members.forEach(function (m) {
+        feeBody.appendChild(buildRow([
+          ['th', 'col-name', m.name],
+          ['td', 'col-num', m.weekdays.join(', ')],
+          ['td', 'col-num', String(m.sessions)],
+          ['td', 'col-num col-total', formatMoney(m.amount)]
+        ]));
+      });
+
+      feeForm.hidden = true;
+      feeResult.hidden = false;
+      // Get the payment QR into the share cache now so Share has less to do later.
+      ShareImage.prefetchQr();
+    }
+
+    loadMembers();
+  </script>
+</body>
+</html>

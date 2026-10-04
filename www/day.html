@@ -1,0 +1,995 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+  <title>Madam Dung Badminton</title>
+  <link rel="stylesheet" href="css/style.css">
+  <meta name="theme-color" content="#0f1115">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" type="image/png" href="img/icons/icon-192.png">
+  <link rel="apple-touch-icon" href="img/icons/icon-180.png">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Madam Dung">
+</head>
+<body>
+  <header class="topbar">
+    <a id="backLink" class="back-link" href="index.html">&#8592;</a>
+    <div class="title-wrap">
+      <h1 id="dayTitle">Loading...</h1>
+      <input id="dayTitleInput" class="title-input" type="text" hidden>
+    </div>
+    <button id="renameBtn" class="icon-button" type="button" aria-label="Rename session">&#9998;</button>
+  </header>
+
+  <main class="container">
+    <div class="roster-bar">
+      <button id="membersBtn" class="secondary-button roster-button" type="button">TV Cố Định</button>
+      <button id="guestsBtn" class="secondary-button roster-button" type="button">TV Vãng Lai</button>
+    </div>
+
+    <div id="emptyState" class="empty-state" hidden>
+      <p>Chưa có Set nào.</p>
+      <p>Bấm dấu + góc dưới màn hình để thêm Set mới.</p>
+    </div>
+
+    <div id="gameList" class="game-list" hidden></div>
+
+    <p id="gameHint" class="game-hint" hidden>Bấm vào đội Thắng, Bấm lại là hủy</p>
+  </main>
+
+  <button id="undoDeleteBtn" class="fab fab-undo" type="button" aria-label="Undo delete" hidden>
+    <span class="fab-undo-icon" aria-hidden="true">&#8617;</span>
+  </button>
+
+  <button id="endDayBtn" class="fab fab-center" type="button" aria-label="Kết Ngày">
+    <span class="fab-center-icon" aria-hidden="true">&#127937;</span>
+  </button>
+
+  <a id="addGameLink" class="fab" href="#" aria-label="Add game"><span class="fab-plus" aria-hidden="true"></span></a>
+
+  <div id="endDayModal" class="modal-overlay" hidden>
+    <div class="modal-card">
+      <h2 id="endDayTitle">Kết Ngày</h2>
+
+      <div id="endDayForm">
+        <div class="form-group">
+          <label for="shuttlecockPrice">Cầu</label>
+          <input type="number" id="shuttlecockPrice" inputmode="decimal" min="0" step="any" placeholder="0" enterkeyhint="next">
+        </div>
+        <div class="form-group">
+          <label for="courtPrice">Sân</label>
+          <input type="number" id="courtPrice" inputmode="decimal" min="0" step="any" placeholder="0" enterkeyhint="next">
+        </div>
+        <div class="form-group">
+          <label for="waterCost">Nước</label>
+          <input type="number" id="waterCost" inputmode="decimal" min="0" step="any" placeholder="0" enterkeyhint="next">
+        </div>
+        <div class="form-group">
+          <label for="waterPrice">Giá Độ Nước / Set</label>
+          <input type="number" id="waterPrice" inputmode="decimal" min="0" step="any" placeholder="8" enterkeyhint="go">
+        </div>
+        <p id="endDayError" class="field-error" hidden></p>
+        <div class="modal-actions">
+          <button type="button" id="cancelEndDayBtn" class="secondary-button">Cancel</button>
+          <button type="button" id="calcEndDayBtn" class="primary-button">Tính Tiền</button>
+        </div>
+      </div>
+
+      <div id="endDayResult" hidden>
+        <div id="settleSummary" class="settle-summary"></div>
+        <table class="settle-table">
+          <thead>
+            <tr>
+              <th scope="col" class="col-name">Tên</th>
+              <th scope="col" class="col-num" aria-label="Tiền Cầu">💵</th>
+              <th scope="col" class="col-num">Thua</th>
+              <th scope="col" class="col-num">Thắng</th>
+              <th scope="col" class="col-num">💧</th>
+              <th scope="col" class="col-num col-total">Tổng</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+        <div class="modal-actions">
+          <button type="button" id="shareEndDayBtn" class="primary-button">Share</button>
+          <button type="button" id="closeEndDayBtn" class="secondary-button">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Kept after #endDayModal: the share code captures the first .modal-card on the page. -->
+  <div id="membersModal" class="modal-overlay" hidden>
+    <div class="modal-card">
+      <h2 id="membersModalTitle">TV Cố Định</h2>
+      <p id="membersEmpty" class="roster-empty" hidden></p>
+      <div id="membersList" class="roster-list"></div>
+      <div class="modal-actions">
+        <button type="button" id="closeMembersBtn" class="primary-button">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="guestsModal" class="modal-overlay" hidden>
+    <div class="modal-card">
+      <h2>TV Vãng Lai</h2>
+      <form id="guestForm" class="guest-form" novalidate>
+        <input type="text" id="guestName" placeholder="Tên Lông Thủ" autocomplete="off" enterkeyhint="next">
+        <input type="text" id="guestFee" class="guest-fee" inputmode="decimal" autocomplete="off" aria-label="Tiền Cầu" enterkeyhint="done">
+        <button type="submit" class="primary-button guest-add-button">Thêm</button>
+      </form>
+      <p id="guestError" class="field-error" hidden></p>
+      <p id="guestsEmpty" class="roster-empty" hidden>Chưa có TV Vãng Lai hôm nay</p>
+      <div id="guestsList" class="roster-list"></div>
+      <div class="modal-actions">
+        <button type="button" id="closeGuestsBtn" class="primary-button">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="shareLoading" class="loading-overlay" role="status" aria-live="polite" hidden>
+    <div class="loading-spinner" aria-hidden="true"></div>
+    <p>Đang chuẩn bị ảnh...</p>
+  </div>
+
+  <script src="js/html2canvas.min.js"></script>
+  <script src="js/pwa.js"></script>
+  <script src="js/db.js"></script>
+  <script src="js/services.js"></script>
+  <script src="js/back-button.js"></script>
+  <script src="js/player-suggest.js"></script>
+  <script src="js/share-image.js"></script>
+  <script>
+    var dayId = parseInt(new URLSearchParams(window.location.search).get('id'), 10);
+
+    document.getElementById('addGameLink').setAttribute('href', 'game-form.html?dayId=' + dayId);
+
+    var emptyStateEl = document.getElementById('emptyState');
+    var gameListEl = document.getElementById('gameList');
+    var gameHintEl = document.getElementById('gameHint');
+    var undoDeleteBtn = document.getElementById('undoDeleteBtn');
+
+    var playerNameById = {};
+
+    function loadPlayerNames() {
+      return Players.findAll().then(function (players) {
+        playerNameById = {};
+        players.forEach(function (p) {
+          playerNameById[p.id] = p.name;
+        });
+      });
+    }
+
+    function formatTimeLabel(isoString) {
+      var d = new Date(isoString);
+      var hh = d.getHours() < 10 ? '0' + d.getHours() : String(d.getHours());
+      var mm = d.getMinutes() < 10 ? '0' + d.getMinutes() : String(d.getMinutes());
+      return hh + ':' + mm;
+    }
+
+    function buildTeamElement(teamNumber, name1, name2, winningTeam) {
+      var team = document.createElement('div');
+      team.className = 'team ' + (teamNumber === 1 ? 'team-left' : 'team-right');
+      team.setAttribute('data-team', String(teamNumber));
+      if (winningTeam === teamNumber) {
+        team.classList.add('winner');
+      } else if (winningTeam && winningTeam !== teamNumber) {
+        team.classList.add('loser');
+      }
+
+      var stampWin = document.createElement('span');
+      stampWin.className = 'stamp stamp-win';
+      stampWin.textContent = '🏆 Lụm';
+      var stampLose = document.createElement('span');
+      stampLose.className = 'stamp stamp-lose';
+      stampLose.textContent = '😭 Lỏ';
+
+      var players = document.createElement('div');
+      players.className = 'players';
+      [name1, name2].forEach(function (n) {
+        var span = document.createElement('span');
+        span.textContent = n;
+        players.appendChild(span);
+      });
+
+      team.appendChild(stampWin);
+      team.appendChild(stampLose);
+      team.appendChild(players);
+      return team;
+    }
+
+    function buildGameRowElement(game) {
+      var row = document.createElement('div');
+      row.className = 'game-row';
+      row.setAttribute('data-game-id', String(game.id));
+
+      var bg = document.createElement('div');
+      bg.className = 'game-row-bg';
+      bg.setAttribute('aria-hidden', 'true');
+      bg.textContent = '🗑️ Xóa';
+      row.appendChild(bg);
+
+      var content = document.createElement('div');
+      content.className = 'game-row-content';
+
+      content.appendChild(buildTeamElement(1, playerNameById[game.team1Player1Id], playerNameById[game.team1Player2Id], game.winningTeam));
+
+      var vsLabel = document.createElement('div');
+      vsLabel.className = 'vs-label';
+      var vsSpan = document.createElement('span');
+      vsSpan.textContent = 'VS';
+      vsLabel.appendChild(vsSpan);
+      if (game.createdAt) {
+        var timeSpan = document.createElement('span');
+        timeSpan.className = 'vs-time';
+        timeSpan.textContent = formatTimeLabel(game.createdAt);
+        vsLabel.appendChild(timeSpan);
+      }
+      content.appendChild(vsLabel);
+
+      content.appendChild(buildTeamElement(2, playerNameById[game.team2Player1Id], playerNameById[game.team2Player2Id], game.winningTeam));
+
+      row.appendChild(content);
+      return row;
+    }
+
+    undoDeleteBtn.addEventListener('click', function () {
+      undoDeleteBtn.disabled = true;
+      Games.undoLastDelete(dayId)
+        .then(function () {
+          saveModalStateBeforeReload();
+          window.location.reload();
+        })
+        .catch(function () {
+          undoDeleteBtn.disabled = false;
+          undoDeleteBtn.hidden = true;
+          alert('Không còn Set đã Xóa để phục hồi');
+        });
+    });
+
+    function bindGameRow(row) {
+      row.querySelectorAll('.team').forEach(function (el) {
+        el.addEventListener('click', function () {
+          var gameId = parseInt(row.getAttribute('data-game-id'), 10);
+          var clickedTeam = parseInt(el.getAttribute('data-team'), 10);
+          var alreadyWinner = el.classList.contains('winner');
+          var newWinningTeam = alreadyWinner ? null : clickedTeam;
+
+          Games.getOrThrow(gameId)
+            .then(function (game) {
+              return Games.setWinner(game, newWinningTeam);
+            })
+            .then(function () {
+              var teams = row.querySelectorAll('.team');
+              teams.forEach(function (t) {
+                t.classList.remove('winner', 'loser');
+                if (newWinningTeam !== null) {
+                  var teamNumber = parseInt(t.getAttribute('data-team'), 10);
+                  t.classList.add(teamNumber === newWinningTeam ? 'winner' : 'loser');
+                }
+              });
+            })
+            .catch(function () {
+              alert('Could not save the result. Check your connection and try again.');
+            });
+        });
+      });
+
+      var vsLabel = row.querySelector('.vs-label');
+
+      function duplicateGame() {
+        var gameId = parseInt(row.getAttribute('data-game-id'), 10);
+
+        Games.getOrThrow(gameId)
+          .then(function (game) {
+            return Games.duplicate(game);
+          })
+          .then(function (newGame) {
+            var newRow = buildGameRowElement(newGame);
+            gameListEl.insertBefore(newRow, gameListEl.firstChild);
+            bindGameRow(newRow);
+          })
+          .catch(function () {
+            alert('Could not duplicate the game. Check your connection and try again.');
+          });
+      }
+
+      bindRowGestures(row, vsLabel, duplicateGame);
+    }
+
+    function bindRowGestures(row, vsLabel, onVsLabelDoubleTap) {
+      var content = row.querySelector('.game-row-content');
+      var DELETE_THRESHOLD = 90;
+      var DOUBLE_TAP_MS = 350;
+      var pointerId = null;
+      var startX = 0;
+      var startY = 0;
+      var currentX = 0;
+      var dragging = false;
+      var moved = false;
+      var pointerDownTarget = null;
+      var lastVsTapTime = 0;
+
+      row.addEventListener('pointerdown', function (e) {
+        if (e.pointerType === 'mouse' && e.button !== 0) {
+          return;
+        }
+        dragging = true;
+        moved = false;
+        currentX = 0;
+        startX = e.clientX;
+        startY = e.clientY;
+        pointerId = e.pointerId;
+        pointerDownTarget = e.target;
+        content.style.transition = 'none';
+      });
+
+      row.addEventListener('pointermove', function (e) {
+        if (!dragging || e.pointerId !== pointerId) {
+          return;
+        }
+        var dx = e.clientX - startX;
+        var dy = e.clientY - startY;
+        if (!moved) {
+          if (Math.abs(dx) < 10) {
+            return;
+          }
+          if (Math.abs(dy) > Math.abs(dx)) {
+            dragging = false;
+            return;
+          }
+          moved = true;
+          try {
+            row.setPointerCapture(pointerId);
+          } catch (err) {
+            // ignore if pointer capture isn't supported for this pointer
+          }
+        }
+        currentX = dx;
+        content.style.transform = 'translateX(' + currentX + 'px)';
+        row.classList.toggle('swiping', Math.abs(currentX) > 10);
+      });
+
+      function endDrag() {
+        if (!dragging) {
+          return;
+        }
+        dragging = false;
+        content.style.transition = '';
+        if (moved) {
+          row.dataset.justDragged = '1';
+        }
+        if (Math.abs(currentX) > DELETE_THRESHOLD) {
+          deleteRow(currentX > 0 ? 1 : -1);
+        } else {
+          content.style.transform = '';
+          row.classList.remove('swiping');
+          if (!moved && pointerDownTarget && vsLabel.contains(pointerDownTarget)) {
+            var now = Date.now();
+            if (now - lastVsTapTime < DOUBLE_TAP_MS) {
+              lastVsTapTime = 0;
+              onVsLabelDoubleTap();
+            } else {
+              lastVsTapTime = now;
+            }
+          }
+        }
+        currentX = 0;
+      }
+
+      row.addEventListener('pointerup', endDrag);
+      row.addEventListener('pointercancel', endDrag);
+
+      row.addEventListener('click', function (e) {
+        if (row.dataset.justDragged) {
+          e.stopPropagation();
+          e.preventDefault();
+          delete row.dataset.justDragged;
+        }
+      }, true);
+
+      function deleteRow(direction) {
+        var gameId = parseInt(row.getAttribute('data-game-id'), 10);
+        content.style.transition = 'transform 0.2s ease';
+        content.style.transform = 'translateX(' + (direction > 0 ? '100%' : '-100%') + ')';
+
+        Games.getOrThrow(gameId)
+          .then(function (game) {
+            return Games.delete(game);
+          })
+          .then(function () {
+            undoDeleteBtn.hidden = false;
+            setTimeout(function () {
+              row.remove();
+              if (!gameListEl.querySelector('.game-row')) {
+                window.location.reload();
+              }
+            }, 200);
+          })
+          .catch(function () {
+            alert('Could not delete the game. Check your connection and try again.');
+            content.style.transform = '';
+            row.classList.remove('swiping');
+          });
+      }
+    }
+
+    var titleEl = document.getElementById('dayTitle');
+    var titleInput = document.getElementById('dayTitleInput');
+    var renameBtn = document.getElementById('renameBtn');
+
+    function enterEditMode() {
+      titleInput.value = titleEl.textContent;
+      titleEl.hidden = true;
+      titleInput.hidden = false;
+      titleInput.focus();
+      titleInput.select();
+    }
+
+    function saveName() {
+      var newName = titleInput.value.trim();
+      titleInput.hidden = true;
+      titleEl.hidden = false;
+      if (!newName || newName === titleEl.textContent) {
+        return;
+      }
+      GameDays.getOrThrow(dayId)
+        .then(function (day) {
+          return GameDays.rename(day, newName);
+        })
+        .then(function (day) {
+          titleEl.textContent = day.name;
+        })
+        .catch(function () {
+          alert('Could not save the name. Check your connection and try again.');
+        });
+    }
+
+    renameBtn.addEventListener('click', enterEditMode);
+    titleInput.addEventListener('blur', saveName);
+    titleInput.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') {
+        titleInput.blur();
+      } else if (e.key === 'Escape') {
+        titleInput.hidden = true;
+        titleEl.hidden = false;
+      }
+    });
+
+    var endDayBtn = document.getElementById('endDayBtn');
+    var endDayModal = document.getElementById('endDayModal');
+    var endDayForm = document.getElementById('endDayForm');
+    var endDayResult = document.getElementById('endDayResult');
+    var endDayError = document.getElementById('endDayError');
+    var shuttlecockInput = document.getElementById('shuttlecockPrice');
+    var courtInput = document.getElementById('courtPrice');
+    var waterCostInput = document.getElementById('waterCost');
+    var waterInput = document.getElementById('waterPrice');
+    var calcEndDayBtn = document.getElementById('calcEndDayBtn');
+    var cancelEndDayBtn = document.getElementById('cancelEndDayBtn');
+    var closeEndDayBtn = document.getElementById('closeEndDayBtn');
+    var shareEndDayBtn = document.getElementById('shareEndDayBtn');
+    var endDayTitleEl = document.getElementById('endDayTitle');
+    var modalCardEl = document.querySelector('.modal-card');
+    var settleSummaryEl = document.getElementById('settleSummary');
+    var settleBodyEl = endDayResult.querySelector('.settle-table tbody');
+    var shareText = '';
+
+    function formatMoney(n) {
+      return Math.round(n).toLocaleString();
+    }
+
+    function openEndDayModal() {
+      endDayTitleEl.textContent = titleEl.textContent;
+      endDayError.hidden = true;
+      endDayForm.hidden = false;
+      endDayResult.hidden = true;
+      endDayModal.hidden = false;
+    }
+
+    // The price boxes are saved with the day on every keystroke, so they survive closing the
+    // popup, leaving the page, or the app being killed. Writes are chained so an older value
+    // can never land after a newer one.
+    var priceSaveChain = Promise.resolve();
+
+    function savePrices() {
+      var prices = {
+        shuttlecock: shuttlecockInput.value,
+        court: courtInput.value,
+        water: waterCostInput.value,
+        waterRate: waterInput.value
+      };
+      priceSaveChain = priceSaveChain
+        .then(function () {
+          return GameDays.savePrices(dayId, prices);
+        })
+        .catch(function () {
+          // keep going; the next keystroke retries with the latest values
+        });
+    }
+
+    function fillPrices(prices) {
+      prices = prices || {};
+      shuttlecockInput.value = prices.shuttlecock || '';
+      courtInput.value = prices.court || '';
+      waterCostInput.value = prices.water || '';
+      waterInput.value = prices.waterRate || '';
+      if (!waterInput.value) {
+        // Nothing typed for this day yet: start from the last rate used (8 the first time).
+        GameDays.defaultWaterRate().then(function (rate) {
+          if (!waterInput.value) {
+            waterInput.value = String(rate);
+          }
+        });
+      }
+    }
+
+    [shuttlecockInput, courtInput, waterCostInput, waterInput].forEach(function (input) {
+      input.addEventListener('input', savePrices);
+    });
+
+    function closeEndDayModal() {
+      endDayModal.hidden = true;
+    }
+
+    var UNDO_MODAL_STORAGE_KEY = 'badminton-undo-modal-' + dayId;
+
+    function saveModalStateBeforeReload() {
+      var state = {
+        open: !endDayModal.hidden,
+        shuttlecockPrice: shuttlecockInput.value,
+        courtPrice: courtInput.value,
+        waterCost: waterCostInput.value,
+        waterPrice: waterInput.value
+      };
+      try {
+        sessionStorage.setItem(UNDO_MODAL_STORAGE_KEY, JSON.stringify(state));
+      } catch (err) {
+        // ignore storage errors (e.g. private browsing)
+      }
+    }
+
+    function restoreModalStateAfterReload() {
+      var raw;
+      try {
+        raw = sessionStorage.getItem(UNDO_MODAL_STORAGE_KEY);
+        sessionStorage.removeItem(UNDO_MODAL_STORAGE_KEY);
+      } catch (err) {
+        return;
+      }
+      if (!raw) {
+        return;
+      }
+      var state;
+      try {
+        state = JSON.parse(raw);
+      } catch (err) {
+        return;
+      }
+      shuttlecockInput.value = state.shuttlecockPrice || '';
+      courtInput.value = state.courtPrice || '';
+      waterCostInput.value = state.waterCost || '';
+      if (state.waterPrice) {
+        waterInput.value = state.waterPrice;
+      }
+      if (state.open) {
+        openEndDayModal();
+      }
+    }
+
+    function calculateSettlement() {
+      var shuttlecockPrice = parseFloat(shuttlecockInput.value) || 0;
+      var courtPrice = parseFloat(courtInput.value) || 0;
+      var waterCost = parseFloat(waterCostInput.value) || 0;
+      var waterRate = parseFloat(waterInput.value) || 0;
+      endDayError.hidden = true;
+
+      Settlement.settle(dayId, shuttlecockPrice, courtPrice, waterCost, waterRate)
+        .then(function (data) {
+          settleSummaryEl.innerHTML = '';
+          var lines = [];
+
+          function addSummaryLine(text) {
+            var p = document.createElement('p');
+            p.className = 'settle-line';
+            p.textContent = text;
+            settleSummaryEl.appendChild(p);
+            lines.push(text);
+          }
+
+          addSummaryLine('Cầu + Sân + Nước = ' + formatMoney(data.totalPrice) + ' 💵');
+          addSummaryLine('Đã Thu Vãng Lai = ' + formatMoney(data.guestPaidTotal) + ' 💵');
+          addSummaryLine('Phát Sinh = ' + formatMoney(data.extraCost) + ' 💵');
+          addSummaryLine('Nước Độ / Set: ' + formatMoney(data.waterRate) + ' 💵');
+
+          function addCell(tr, tag, className, text) {
+            var cell = document.createElement(tag);
+            cell.className = className;
+            cell.textContent = text;
+            tr.appendChild(cell);
+          }
+
+          settleBodyEl.innerHTML = '';
+          data.players.forEach(function (p) {
+            var nameLine = p.name + ' : ' + p.gamesLost + ' Thua - ' + p.gamesWon + ' Thắng';
+            var amountLine = formatMoney(p.courtShare) + '💰 ' + (p.waterShare < 0 ? '- ' : '+ ')
+              + formatMoney(Math.abs(p.waterShare)) + '💧' + ' = ' + formatMoney(p.amount) + '💵';
+            var tr = document.createElement('tr');
+            addCell(tr, 'th', 'col-name', p.name);
+            tr.firstChild.setAttribute('scope', 'row');
+            addCell(tr, 'td', 'col-num', formatMoney(p.courtShare));
+            addCell(tr, 'td', 'col-num', String(p.gamesLost));
+            addCell(tr, 'td', 'col-num', String(p.gamesWon));
+            addCell(tr, 'td', 'col-num', formatMoney(p.waterShare));
+            addCell(tr, 'td', 'col-num col-total', formatMoney(p.amount));
+            settleBodyEl.appendChild(tr);
+            lines.push(nameLine, amountLine);
+          });
+          shareText = titleEl.textContent + '\n' + lines.join('\n');
+          endDayForm.hidden = true;
+          endDayResult.hidden = false;
+          // Get the payment QR into the share cache now so Share has less to do later.
+          ShareImage.prefetchQr();
+        })
+        .catch(function (err) {
+          endDayError.textContent = err.message;
+          endDayError.hidden = false;
+        });
+    }
+
+    // Re-read today's TV Cố Định / TV Vãng Lai so the buttons and the settlement use the latest
+    // lists; Tính Tiền always recalculates from the saved data.
+    endDayBtn.addEventListener('click', function () {
+      refreshRoster();
+      openEndDayModal();
+    });
+    cancelEndDayBtn.addEventListener('click', closeEndDayModal);
+    closeEndDayBtn.addEventListener('click', closeEndDayModal);
+    calcEndDayBtn.addEventListener('click', calculateSettlement);
+
+    shuttlecockInput.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        courtInput.focus();
+      }
+    });
+    courtInput.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        waterCostInput.focus();
+      }
+    });
+    waterCostInput.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        waterInput.focus();
+      }
+    });
+    waterInput.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        waterInput.blur();
+        calculateSettlement();
+      }
+    });
+    endDayModal.addEventListener('click', function (e) {
+      if (e.target === endDayModal) {
+        closeEndDayModal();
+      }
+    });
+
+    var shareLoading = ShareImage.createLoading(document.getElementById('shareLoading'), shareEndDayBtn);
+
+    shareEndDayBtn.addEventListener('click', function () {
+      if (typeof html2canvas !== 'function') {
+        ShareImage.shareText(titleEl.textContent, shareText);
+        return;
+      }
+
+      if (shareEndDayBtn.disabled) {
+        return;
+      }
+      shareLoading.show();
+      // html2canvas blocks the main thread while it renders, so give the spinner
+      // a frame to paint first.
+      setTimeout(captureAndShare, 50);
+    });
+
+    // Images are rendered one after another rather than in parallel so a long game list
+    // and the settlement card never hold full-size canvases in memory at the same time.
+    function captureAndShare() {
+      var title = titleEl.textContent;
+      captureSettlementCard()
+        .then(function (cardBlob) {
+          if (!cardBlob) {
+            throw new Error('Could not render the settlement card');
+          }
+          return captureGameList().then(function (gamesBlob) {
+            var images = [{ blob: cardBlob, fileName: ShareImage.toSafeFileName(title) }];
+            if (gamesBlob) {
+              images.push({ blob: gamesBlob, fileName: ShareImage.toSafeFileName(title, '-cac-set') });
+            }
+            return ShareImage.shareImages(images, title, shareLoading.hide);
+          });
+        })
+        .catch(function () {
+          shareLoading.hide();
+          ShareImage.shareText(title, shareText);
+        });
+    }
+
+    // The whole list of sets for the day, headed by the day name and set count so the image
+    // makes sense on its own in a chat. The header is added to the live list only for the
+    // capture — it sits behind the End Day modal, so the user never sees it. Resolves to null
+    // (share goes ahead without this image) if the list is empty or fails to render.
+    function captureGameList() {
+      var rowCount = gameListEl.querySelectorAll('.game-row').length;
+      if (gameListEl.hidden || rowCount === 0) {
+        return Promise.resolve(null);
+      }
+
+      var header = document.createElement('div');
+      header.className = 'share-game-header';
+      header.textContent = titleEl.textContent + ' · ' + rowCount + ' Set';
+      gameListEl.insertBefore(header, gameListEl.firstChild);
+
+      function removeHeader() {
+        if (header.parentNode) {
+          header.parentNode.removeChild(header);
+        }
+      }
+
+      var fullHeight = gameListEl.scrollHeight;
+      return ShareImage.renderToBlob(gameListEl, {
+        backgroundColor: getComputedStyle(document.body).backgroundColor,
+        // Keep very long lists under ~8000px tall; bigger canvases fail on some WebViews.
+        scale: Math.min(2, 8000 / fullHeight),
+        windowHeight: Math.max(document.documentElement.scrollHeight, window.innerHeight)
+      }).then(function (blob) {
+        removeHeader();
+        return blob;
+      }, function () {
+        removeHeader();
+        return null;
+      });
+    }
+
+    function captureSettlementCard() {
+      return ShareImage.renderModalCard(modalCardEl, 'endDayModal', '#endDayResult .modal-actions');
+    }
+
+    function loadDay() {
+      GameDays.getOrThrow(dayId)
+        .then(function (day) {
+          titleEl.textContent = day.name;
+          document.getElementById('backLink').setAttribute('href', 'days.html?month=' + Months.keyOfDate(day.date));
+          fillPrices(day.prices);
+          return loadPlayerNames();
+        })
+        .then(function () {
+          return Games.findAllForDay(dayId);
+        })
+        .then(function (games) {
+          gameListEl.innerHTML = '';
+          if (games.length === 0) {
+            emptyStateEl.hidden = false;
+            gameListEl.hidden = true;
+            gameHintEl.hidden = true;
+          } else {
+            emptyStateEl.hidden = true;
+            gameListEl.hidden = false;
+            gameHintEl.hidden = false;
+            games.forEach(function (game) {
+              var row = buildGameRowElement(game);
+              gameListEl.appendChild(row);
+              bindGameRow(row);
+            });
+          }
+          return Games.hasDeletedGames(dayId);
+        })
+        .then(function (hasDeleted) {
+          undoDeleteBtn.hidden = !hasDeleted;
+          restoreModalStateAfterReload();
+        })
+        .catch(function (err) {
+          alert(err.message || 'Could not load this day.');
+        });
+    }
+
+    // ---- TV Cố Định / TV Vãng Lai ----
+
+    var membersBtn = document.getElementById('membersBtn');
+    var guestsBtn = document.getElementById('guestsBtn');
+    var membersModal = document.getElementById('membersModal');
+    var membersModalTitle = document.getElementById('membersModalTitle');
+    var membersEmpty = document.getElementById('membersEmpty');
+    var membersList = document.getElementById('membersList');
+    var guestsModal = document.getElementById('guestsModal');
+    var guestForm = document.getElementById('guestForm');
+    var guestNameInput = document.getElementById('guestName');
+    var guestFeeInput = document.getElementById('guestFee');
+
+    // Tapping an amount box puts the cursor after the last digit (not where the finger landed),
+    // so it's ready to edit. Number inputs don't allow moving the cursor, hence these are text
+    // inputs with a numeric keypad. The move waits a tick for the browser to place its own caret.
+    function caretToEndOnTap(input) {
+      function moveToEnd() {
+        setTimeout(function () {
+          var end = input.value.length;
+          input.setSelectionRange(end, end);
+        }, 0);
+      }
+      input.addEventListener('focus', moveToEnd);
+      input.addEventListener('click', moveToEnd);
+    }
+    caretToEndOnTap(guestFeeInput);
+    var guestError = document.getElementById('guestError');
+    var guestsEmpty = document.getElementById('guestsEmpty');
+    var guestsList = document.getElementById('guestsList');
+
+    function updateRosterButtons(roster) {
+      var playing = roster.members.filter(function (m) {
+        return m.playing;
+      }).length;
+      membersBtn.textContent = 'TV Cố Định (' + playing + ')';
+      guestsBtn.textContent = 'TV Vãng Lai (' + roster.guests.length + ')';
+    }
+
+    function refreshRoster() {
+      return GameDays.roster(dayId).then(function (roster) {
+        updateRosterButtons(roster);
+        return roster;
+      });
+    }
+
+    function renderMembers(roster) {
+      membersModalTitle.textContent = 'TV Cố Định - ' + (roster.thu === 1 ? 'Chủ Nhật' : 'Thứ ' + roster.thu);
+      membersList.innerHTML = '';
+      if (roster.members.length === 0) {
+        membersEmpty.textContent = Members.WEEKDAYS.indexOf(roster.thu) === -1
+          ? 'Hôm nay không có lịch TV Cố Định (chỉ Thứ ' + Members.WEEKDAYS.join(', ') + ')'
+          : 'Không có TV Cố Định chơi ngày này';
+        membersEmpty.hidden = false;
+        return;
+      }
+      membersEmpty.hidden = true;
+      roster.members.forEach(function (m) {
+        var row = document.createElement('button');
+        row.type = 'button';
+        row.className = 'roster-row';
+        var name = document.createElement('span');
+        name.className = 'roster-name';
+        name.textContent = m.name;
+        var status = document.createElement('span');
+        status.className = 'roster-status ' + (m.playing ? 'is-playing' : 'is-resting');
+        status.textContent = m.playing ? 'Chơi' : 'Nghỉ';
+        row.appendChild(name);
+        row.appendChild(status);
+        row.addEventListener('click', function () {
+          GameDays.setMemberPlaying(dayId, m.playerId, !m.playing)
+            .then(refreshRoster)
+            .then(renderMembers)
+            .catch(function () {
+              alert('Không lưu được. Vui lòng thử lại.');
+            });
+        });
+        membersList.appendChild(row);
+      });
+    }
+
+    function renderGuests(roster) {
+      guestsList.innerHTML = '';
+      guestsEmpty.hidden = roster.guests.length > 0;
+      roster.guests.forEach(function (g) {
+        var row = document.createElement('div');
+        row.className = 'roster-row';
+        var name = document.createElement('span');
+        name.className = 'roster-name';
+        name.textContent = g.name;
+        // Tiền Cầu for this guest; editing it saves straight away.
+        var fee = document.createElement('input');
+        fee.type = 'text';
+        fee.className = 'guest-fee';
+        fee.inputMode = 'decimal';
+        fee.autocomplete = 'off';
+        fee.value = String(g.fee);
+        caretToEndOnTap(fee);
+        fee.setAttribute('aria-label', 'Tiền Cầu ' + g.name);
+        fee.addEventListener('change', function () {
+          GameDays.setGuestFee(dayId, g.playerId, fee.value)
+            .then(function () {
+              g.fee = parseFloat(fee.value);
+            })
+            .catch(function (err) {
+              fee.value = String(g.fee);
+              alert(err.message || 'Không lưu được. Vui lòng thử lại.');
+            });
+        });
+        var remove = document.createElement('button');
+        remove.type = 'button';
+        remove.className = 'roster-remove';
+        remove.setAttribute('aria-label', 'Xóa ' + g.name);
+        remove.textContent = '✕';
+        remove.addEventListener('click', function () {
+          GameDays.removeGuest(dayId, g.playerId)
+            .then(refreshRoster)
+            .then(renderGuests)
+            .catch(function () {
+              alert('Không xóa được. Vui lòng thử lại.');
+            });
+        });
+        row.appendChild(name);
+        row.appendChild(fee);
+        row.appendChild(remove);
+        guestsList.appendChild(row);
+      });
+    }
+
+    membersBtn.addEventListener('click', function () {
+      refreshRoster().then(function (roster) {
+        renderMembers(roster);
+        membersModal.hidden = false;
+      });
+    });
+
+    guestsBtn.addEventListener('click', function () {
+      guestNameInput.value = '';
+      guestError.hidden = true;
+      refreshRoster().then(function (roster) {
+        guestFeeInput.value = String(roster.defaultGuestFee);
+        renderGuests(roster);
+        guestsModal.hidden = false;
+      });
+    });
+
+    // Suggests players who aren't already today's guests or scheduled members.
+    var guestSuggest = PlayerSuggest.attach(guestNameInput, function () {
+      return Promise.all([Players.findAll(), GameDays.roster(dayId)]).then(function (results) {
+        var taken = {};
+        results[1].members.concat(results[1].guests).forEach(function (p) {
+          taken[p.playerId] = true;
+        });
+        return results[0].filter(function (p) {
+          return !taken[p.id];
+        }).map(function (p) {
+          return p.name;
+        });
+      });
+    });
+
+    guestForm.addEventListener('submit', function (e) {
+      e.preventDefault();
+      guestError.hidden = true;
+      guestSuggest.hide();
+      GameDays.addGuest(dayId, guestNameInput.value, guestFeeInput.value)
+        .then(function () {
+          guestNameInput.value = '';
+          return refreshRoster();
+        })
+        .then(renderGuests)
+        .catch(function (err) {
+          guestError.textContent = err.message || 'Không thêm được. Vui lòng thử lại.';
+          guestError.hidden = false;
+        });
+    });
+
+    [[membersModal, 'closeMembersBtn'], [guestsModal, 'closeGuestsBtn']].forEach(function (pair) {
+      var modal = pair[0];
+      document.getElementById(pair[1]).addEventListener('click', function () {
+        modal.hidden = true;
+      });
+      modal.addEventListener('click', function (e) {
+        if (e.target === modal) {
+          modal.hidden = true;
+        }
+      });
+    });
+
+    loadDay();
+    refreshRoster();
+  </script>
+</body>
+</html>

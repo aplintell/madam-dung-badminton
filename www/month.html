@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+  <title>Madam Dung Badminton</title>
+  <link rel="stylesheet" href="css/style.css">
+  <meta name="theme-color" content="#0f1115">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" type="image/png" href="img/icons/icon-192.png">
+  <link rel="apple-touch-icon" href="img/icons/icon-180.png">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Madam Dung">
+</head>
+<body>
+  <header class="topbar">
+    <a class="back-link" href="index.html">&#8592;</a>
+    <h1 id="monthTitle">Madam Dung Badminton</h1>
+  </header>
+
+  <main class="container">
+    <div class="day-list">
+      <a id="membersLink" class="day-card option-card" href="#">
+        <span class="option-icon" aria-hidden="true">👥</span>
+        <span>
+          <span class="day-date">Thành Viên Cố Định</span>
+          <span id="membersMeta" class="day-meta"></span>
+        </span>
+      </a>
+      <a id="daysLink" class="day-card option-card" href="#">
+        <span class="option-icon" aria-hidden="true">🏸</span>
+        <span>
+          <span class="day-date">Ngày Chơi Cầu</span>
+          <span id="daysMeta" class="day-meta"></span>
+        </span>
+      </a>
+    </div>
+  </main>
+
+  <script src="js/pwa.js"></script>
+  <script src="js/db.js"></script>
+  <script src="js/services.js"></script>
+  <script src="js/back-button.js"></script>
+  <script>
+    var monthKey = new URLSearchParams(window.location.search).get('month');
+    if (!Months.isValidKey(monthKey)) {
+      monthKey = Months.currentKey();
+    }
+    document.getElementById('monthTitle').textContent = Months.formatName(monthKey);
+    document.getElementById('membersLink').setAttribute('href', 'members.html?month=' + monthKey);
+    document.getElementById('daysLink').setAttribute('href', 'days.html?month=' + monthKey);
+
+    Promise.all([Members.findAllForMonth(monthKey), GameDays.findForMonth(monthKey)]).then(function (results) {
+      document.getElementById('membersMeta').textContent = results[0].length + ' Thành Viên';
+      document.getElementById('daysMeta').textContent = results[1].length + ' Ngày Chơi';
+    });
+  </script>
+</body>
+</html>
