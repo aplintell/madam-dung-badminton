@@ -1497,3 +1497,11 @@ body {
   vertical-align: -0.45em;
   margin: 0 1px;
 }
+
+/* Water-bottle picture used in the Kết Ngày summary heading */
+.water-icon {
+  height: 1.6em;
+  width: auto;
+  vertical-align: -0.5em;
+  margin: 0 1px;
+}

@@ -622,6 +622,7 @@
     // Pictures used in summary headings in place of emoji.
     var SHUTTLECOCK_ICON = { src: 'img/icons/shuttlecock.png', className: 'shuttle-icon' };
     var COURT_ICON = { src: 'img/icons/court.png', className: 'court-icon' };
+    var WATER_ICON = { src: 'img/icons/water-bottle.png', className: 'water-icon' };
 
     function calculateSettlement() {
       var shuttlecockPrice = parseFloat(shuttlecockInput.value) || 0;
@@ -672,7 +673,7 @@
             lines.push(shareLabel + shareSeparator + formatMoney(amount) + ' 💵');
           }
 
-          addSummaryLine([SHUTTLECOCK_ICON, '/', COURT_ICON, '/💧'], 'Cầu + Sân + Nước', data.totalPrice, ' = '); // shuttlecock / court / water
+          addSummaryLine([SHUTTLECOCK_ICON, '/', COURT_ICON, '/', WATER_ICON], 'Cầu + Sân + Nước', data.totalPrice, ' = '); // shuttlecock / court / water
           addSummaryLine('Thu VL', 'Đã Thu Vãng Lai', data.guestPaidTotal, ' = ');
           addSummaryLine('Phát Sinh', 'Phát Sinh', data.extraCost, ' = ');
           addSummaryLine('Độ/Set', 'Nước Độ / Set', data.waterRate, ': ');

@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="40" height="80" viewBox="0 0 20 40" role="img" aria-label="Chai nước">
+  <!-- Plastic water bottle: blue cap, clear light-blue body with ridges, petal-shaped base. -->
+  <defs>
+    <linearGradient id="body" x1="0" x2="1" y1="0" y2="0">
+      <stop offset="0" stop-color="#5aa9e6"/>
+      <stop offset="0.35" stop-color="#cfe9fb"/>
+      <stop offset="0.6" stop-color="#9fd0f3"/>
+      <stop offset="1" stop-color="#3f8fd2"/>
+    </linearGradient>
+  </defs>
+  <!-- cap -->
+  <rect x="6.3" y="0.6" width="7.4" height="4" rx="1" fill="#1f78d1" stroke="#145a9e" stroke-width="0.5"/>
+  <g stroke="#145a9e" stroke-width="0.35">
+    <line x1="7.5" y1="1" x2="7.5" y2="4.2"/><line x1="8.8" y1="1" x2="8.8" y2="4.2"/>
+    <line x1="10" y1="1" x2="10" y2="4.2"/><line x1="11.2" y1="1" x2="11.2" y2="4.2"/>
+    <line x1="12.5" y1="1" x2="12.5" y2="4.2"/>
+  </g>
+  <!-- neck ring -->
+  <rect x="5.8" y="4.6" width="8.4" height="1.2" rx="0.5" fill="#8cc6ef" stroke="#3f8fd2" stroke-width="0.4"/>
+  <!-- body: shoulders, straight sides, petal base -->
+  <path d="M7 5.8 L13 5.8 C13 8.6 16.6 9.8 16.6 13.4 L16.6 33.6
+           Q16.6 36.6 15 37.6 Q13.8 39.2 12.4 38.2 Q11.2 39.4 10 38.4 Q8.8 39.4 7.6 38.2 Q6.2 39.2 5 37.6
+           Q3.4 36.6 3.4 33.6 L3.4 13.4 C3.4 9.8 7 8.6 7 5.8 Z"
+        fill="url(#body)" stroke="#2f7fc4" stroke-width="0.6" stroke-linejoin="round"/>
+  <!-- ridges -->
+  <g fill="none" stroke="#2f7fc4" stroke-opacity="0.75" stroke-width="0.45" stroke-linecap="round">
+    <path d="M3.6 20.5 Q10 21.6 16.4 20.5"/>
+    <path d="M3.6 22.6 Q10 23.7 16.4 22.6"/>
+    <path d="M3.6 24.7 Q10 25.8 16.4 24.7"/>
+    <path d="M3.6 26.8 Q10 27.9 16.4 26.8"/>
+    <path d="M3.6 28.9 Q10 30 16.4 28.9"/>
+  </g>
+  <!-- water line and shine -->
+  <path d="M3.5 12.6 Q10 13.6 16.5 12.6" fill="none" stroke="#ffffff" stroke-opacity="0.7" stroke-width="0.5"/>
+  <path d="M6 12 L6 34" stroke="#ffffff" stroke-opacity="0.75" stroke-width="0.9" stroke-linecap="round"/>
+</svg>
