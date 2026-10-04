@@ -94,16 +94,33 @@
       e.preventDefault();
       errorEl.hidden = true;
       button.disabled = true;
-      auth.signInWithEmailAndPassword(global.FIREBASE_GROUP_EMAIL, input.value).catch(function (err) {
+      // Phone keyboards can add a space before or after; the group password has none.
+      auth.signInWithEmailAndPassword(global.FIREBASE_GROUP_EMAIL, input.value.trim()).catch(function (err) {
         button.disabled = false;
-        errorEl.textContent = err && err.code === 'auth/network-request-failed'
-          ? 'Không có kết nối mạng. Vui lòng thử lại.'
-          : 'Sai mật khẩu';
+        errorEl.textContent = loginErrorMessage(err);
         errorEl.hidden = false;
       });
     });
     document.body.appendChild(loginEl);
     input.focus();
+  }
+
+  // Only a refused password is "Sai mật khẩu"; anything else says what actually went wrong.
+  function loginErrorMessage(err) {
+    var code = (err && err.code) || '';
+    if (code === 'auth/wrong-password' || code === 'auth/invalid-credential' || code === 'auth/invalid-login-credentials') {
+      return 'Sai mật khẩu';
+    }
+    if (code === 'auth/too-many-requests') {
+      return 'Nhập sai quá nhiều lần nên tạm bị khóa. Vui lòng đợi vài phút rồi thử lại.';
+    }
+    if (code === 'auth/network-request-failed') {
+      return 'Không có kết nối mạng. Vui lòng thử lại.';
+    }
+    if (code === 'auth/web-storage-unsupported') {
+      return 'Trình duyệt này không cho đăng nhập. Hãy mở link bằng Chrome hoặc Safari.';
+    }
+    return 'Không đăng nhập được (' + (code || (err && err.message) || 'lỗi không xác định') + '). Hãy thử mở link bằng Chrome hoặc Safari.';
   }
 
   function whenBodyReady(fn) {
