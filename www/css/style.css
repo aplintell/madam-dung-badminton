@@ -1308,3 +1308,47 @@ body {
 .game-list-page .page-loading {
   font-size: 0.9rem;
 }
+
+/* Thành Viên Cố Định list: text two sizes smaller */
+.member-row-content {
+  font-size: 0.81rem;
+}
+
+/* Kết Ngày / Tính Tiền: title and summary (heading area) two sizes smaller */
+#endDayModal .modal-card h2 {
+  font-size: 0.97rem;
+}
+
+#endDayModal .settle-line {
+  font-size: 0.83rem;
+}
+
+/* Chi Phí Thành Viên Cố Định: every text two sizes smaller */
+#feeModal .modal-card h2 {
+  font-size: 0.97rem;
+}
+
+#feeModal .settle-line {
+  font-size: 0.83rem;
+}
+
+#feeModal .settle-table {
+  font-size: 0.69rem;
+}
+
+#feeModal .settle-table thead th {
+  font-size: 0.65rem;
+}
+
+#feeModal .form-group label {
+  font-size: 0.69rem;
+}
+
+#feeModal .modal-card input[type="number"] {
+  font-size: 0.89rem;
+}
+
+#feeModal .primary-button,
+#feeModal .secondary-button {
+  font-size: 0.81rem;
+}
