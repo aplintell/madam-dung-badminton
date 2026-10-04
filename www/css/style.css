@@ -1415,3 +1415,38 @@ body {
 .game-list-page .game-row-bg {
   font-size: 0.85rem;
 }
+
+/* Thành Viên Cố Định as a table: Tên | Thứ 2 | Thứ 4 | Thứ 6, green check on the member's days */
+.member-table-head,
+.member-row-content {
+  display: grid;
+  grid-template-columns: 1fr repeat(3, 56px);
+  align-items: center;
+  column-gap: 4px;
+}
+
+.member-table-head {
+  padding: 8px 16px;
+  background: var(--surface-alt);
+  border-bottom: 1px solid var(--border);
+  color: var(--text-dim);
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.member-day-cell {
+  text-align: center;
+}
+
+.member-row-content .member-day-cell.is-on {
+  color: var(--win);
+  font-size: 1rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.member-row-content .member-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

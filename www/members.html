@@ -26,7 +26,7 @@
       <p>Bấm dấu + góc dưới màn hình để thêm Thành Viên.</p>
     </div>
 
-    <div id="memberList" class="game-list" hidden></div>
+    <div id="memberList" class="game-list member-table" role="table" aria-label="Thành Viên Cố Định" hidden></div>
 
     <p id="memberHint" class="game-hint" hidden>Giữ để sửa, vuốt sang trái hoặc phải để xóa</p>
   </main>
@@ -168,6 +168,7 @@
     function loadMembers() {
       return Members.findAllForMonth(monthKey).then(function (members) {
         memberListEl.innerHTML = '';
+        memberListEl.appendChild(buildMemberTableHead());
         setListVisibility(members.length > 0);
         members.forEach(function (member) {
           var row = buildMemberRow(member);
@@ -177,9 +178,30 @@
       });
     }
 
+    // The list is laid out as a table: Tên, then one column per member weekday (Thứ 2, 4, 6) with a
+    // green check where the member plays that day. Rows stay swipeable / long-pressable.
+    function buildMemberTableHead() {
+      var head = document.createElement('div');
+      head.className = 'member-table-head';
+      head.setAttribute('role', 'row');
+      var name = document.createElement('span');
+      name.setAttribute('role', 'columnheader');
+      name.textContent = 'Tên';
+      head.appendChild(name);
+      Members.WEEKDAYS.forEach(function (d) {
+        var day = document.createElement('span');
+        day.className = 'member-day-cell';
+        day.setAttribute('role', 'columnheader');
+        day.textContent = 'Thứ ' + d;
+        head.appendChild(day);
+      });
+      return head;
+    }
+
     function buildMemberRow(member) {
       var row = document.createElement('div');
       row.className = 'game-row member-row';
+      row.setAttribute('role', 'row');
 
       var bg = document.createElement('div');
       bg.className = 'game-row-bg';
@@ -187,17 +209,22 @@
       bg.textContent = '🗑️ Xóa';
       row.appendChild(bg);
 
-      // e.g. "Dung - Thứ 2, 4, 6"
       var content = document.createElement('div');
       content.className = 'member-row-content';
       var nameEl = document.createElement('span');
       nameEl.className = 'member-name';
+      nameEl.setAttribute('role', 'cell');
       nameEl.textContent = member.name;
-      var daysEl = document.createElement('span');
-      daysEl.className = 'member-days';
-      daysEl.textContent = ' - ' + Members.formatWeekdays(member.weekdays);
       content.appendChild(nameEl);
-      content.appendChild(daysEl);
+      Members.WEEKDAYS.forEach(function (d) {
+        var plays = member.weekdays.indexOf(d) !== -1;
+        var cell = document.createElement('span');
+        cell.className = 'member-day-cell' + (plays ? ' is-on' : '');
+        cell.setAttribute('role', 'cell');
+        cell.setAttribute('aria-label', 'Thứ ' + d + (plays ? ': có' : ': không'));
+        cell.textContent = plays ? '✓' : '';
+        content.appendChild(cell);
+      });
       row.appendChild(content);
 
       return row;
