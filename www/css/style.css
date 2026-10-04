@@ -1524,3 +1524,71 @@ body {
   padding-top: 13px;
   padding-bottom: 13px;
 }
+
+/* Tạo Tháng Mới: "Chọn Ngày Off trong tháng" checkbox and the month calendar */
+.check-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 4px 0 12px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.check-row input {
+  width: 20px;
+  height: 20px;
+  accent-color: var(--accent);
+}
+
+.off-calendar {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+}
+
+.off-calendar-head {
+  text-align: center;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--text-dim);
+  padding: 2px 0;
+}
+
+.off-calendar-day {
+  aspect-ratio: 1;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface-alt);
+  color: var(--text-dim);
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 0;
+  cursor: pointer;
+}
+
+/* Thứ 2 / 4 / 6 (the members' playing days) stand out */
+.off-calendar-day.is-play-day {
+  color: var(--text);
+  font-weight: 800;
+  border-color: var(--accent);
+}
+
+.off-calendar-day.is-off {
+  background: var(--lose-bg);
+  border-color: var(--lose);
+  color: var(--lose);
+  text-decoration: line-through;
+}
+
+.off-days-summary {
+  margin: 8px 0 12px;
+  font-size: 0.75rem;
+  color: var(--text-dim);
+}
+
+#feeModal .off-days-note {
+  margin: 10px 0 0;
+  color: var(--lose);
+}

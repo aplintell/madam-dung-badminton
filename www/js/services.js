@@ -556,7 +556,11 @@
      * Creates a new month and copies in the members of the previous month (the latest existing
      * month before it), keeping their weekdays. Refuses if the month already exists.
      */
-    create: function (monthKey) {
+    /**
+     * Creates a month. offDays ("YYYY-MM-DD" dates in that month) are days the court isn't used:
+     * they're left out when the members' monthly fee is worked out.
+     */
+    create: function (monthKey, offDays) {
       if (!Months.isValidKey(monthKey)) {
         return Promise.reject(new Error('Vui lòng chọn tháng'));
       }
@@ -574,6 +578,9 @@
           }
         });
         var month = newMonth(monthKey);
+        month.offDays = (offDays || []).filter(function (date) {
+          return monthKeyOfDate(date) === monthKey;
+        }).sort();
         return Db.add('months', month).then(function (id) {
           month.id = id;
           return previousKey === null ? [] : Db.getAllByIndex('members', 'monthKey', previousKey);
@@ -696,7 +703,8 @@
     },
 
     /** How many of each member weekday fall in the month, e.g. { 2: 4, 4: 4, 6: 5 }. */
-    countWeekdaysInMonth: function (monthKey) {
+    /** As above, leaving out the month's off days ("YYYY-MM-DD"), when given. */
+    countWeekdaysInMonth: function (monthKey, offDays) {
       var m = MONTH_KEY_PATTERN.exec(monthKey);
       var year = parseInt(m[1], 10);
       var monthIndex = parseInt(m[2], 10) - 1;
@@ -705,7 +713,14 @@
       MEMBER_WEEKDAYS.forEach(function (d) {
         counts[d] = 0;
       });
+      var off = {};
+      (offDays || []).forEach(function (date) {
+        off[date] = true;
+      });
       for (var day = 1; day <= daysInMonth; day++) {
+        if (off[monthKey + '-' + pad2(day)]) {
+          continue;
+        }
         // Date#getDay() is 0 for Sunday, so "Thứ N" is getDay() + 1.
         var thu = new Date(year, monthIndex, day).getDay() + 1;
         if (counts[thu] !== undefined) {
@@ -746,11 +761,14 @@
      * like the End Day split).
      */
     settleFee: function (monthKey, courtRate) {
-      return Members.findAllForMonth(monthKey).then(function (members) {
+      return Promise.all([Members.findAllForMonth(monthKey), Months.findByKey(monthKey)]).then(function (results) {
+        var members = results[0];
         if (members.length === 0) {
           throw new Error('Chưa có Thành Viên trong tháng này');
         }
-        var weekdayCounts = Members.countWeekdaysInMonth(monthKey);
+        // Off days chosen when the month was created don't count as sessions.
+        var offDays = (results[1] && results[1].offDays) || [];
+        var weekdayCounts = Members.countWeekdaysInMonth(monthKey, offDays);
         var totalSessions = 0;
         var rows = members.map(function (m) {
           var sessions = 0;
@@ -773,6 +791,7 @@
         });
         return {
           courtRate: courtRate,
+          offDays: offDays,
           weekdayCounts: weekdayCounts,
           courtRows: courtRows,
           courtTotal: courtTotal,

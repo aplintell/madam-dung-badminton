@@ -43,6 +43,14 @@
         <label for="monthInput">Tháng</label>
         <input type="month" id="monthInput" required>
       </div>
+      <label class="check-row">
+        <input type="checkbox" id="offDaysToggle">
+        <span>Chọn Ngày Off trong tháng</span>
+      </label>
+      <div id="offDaysPicker" hidden>
+        <div id="offDaysCalendar" class="off-calendar" role="group" aria-label="Ngày Off"></div>
+        <p id="offDaysSummary" class="off-days-summary"></p>
+      </div>
       <p id="addMonthError" class="field-error" hidden></p>
       <div class="modal-actions">
         <button type="button" id="cancelAddMonthBtn" class="secondary-button">Cancel</button>
@@ -256,6 +264,7 @@
       }
       monthInput.value = suggested;
       addMonthError.hidden = true;
+      resetOffDays();
       addMonthModal.hidden = false;
     });
 
@@ -269,6 +278,96 @@
       }
     });
 
+    // ---- Ngày Off: tap days on the month's calendar; they're left out of the monthly fee ----
+
+    var offDaysToggle = document.getElementById('offDaysToggle');
+    var offDaysPicker = document.getElementById('offDaysPicker');
+    var offDaysCalendar = document.getElementById('offDaysCalendar');
+    var offDaysSummary = document.getElementById('offDaysSummary');
+    var offDays = {};
+    var CALENDAR_HEADINGS = ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'];
+
+    function resetOffDays() {
+      offDays = {};
+      offDaysToggle.checked = false;
+      offDaysPicker.hidden = true;
+    }
+
+    function pad2(n) {
+      return n < 10 ? '0' + n : String(n);
+    }
+
+    function renderOffDaysCalendar() {
+      offDaysCalendar.innerHTML = '';
+      var monthKey = monthInput.value;
+      if (!Months.isValidKey(monthKey)) {
+        offDaysSummary.textContent = 'Vui lòng chọn tháng';
+        return;
+      }
+      CALENDAR_HEADINGS.forEach(function (text) {
+        var head = document.createElement('span');
+        head.className = 'off-calendar-head';
+        head.textContent = text;
+        offDaysCalendar.appendChild(head);
+      });
+      var parts = monthKey.split('-');
+      var year = parseInt(parts[0], 10);
+      var monthIndex = parseInt(parts[1], 10) - 1;
+      var daysInMonth = new Date(year, monthIndex + 1, 0).getDate();
+      // Weeks start on Thứ 2 (Monday): blank cells before the 1st.
+      var leading = (new Date(year, monthIndex, 1).getDay() + 6) % 7;
+      for (var i = 0; i < leading; i++) {
+        offDaysCalendar.appendChild(document.createElement('span'));
+      }
+      for (var day = 1; day <= daysInMonth; day++) {
+        var date = monthKey + '-' + pad2(day);
+        var thu = new Date(year, monthIndex, day).getDay() + 1;
+        var button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'off-calendar-day'
+          + (Members.WEEKDAYS.indexOf(thu) !== -1 ? ' is-play-day' : '')
+          + (offDays[date] ? ' is-off' : '');
+        button.textContent = String(day);
+        button.setAttribute('aria-pressed', offDays[date] ? 'true' : 'false');
+        button.dataset.date = date;
+        offDaysCalendar.appendChild(button);
+      }
+      var count = Object.keys(offDays).length;
+      offDaysSummary.textContent = count === 0
+        ? 'Bấm vào ngày để chọn Ngày Off'
+        : 'Đã chọn ' + count + ' Ngày Off: ' + Object.keys(offDays).sort().map(function (d) {
+          return parseInt(d.slice(8), 10) + '/' + parseInt(d.slice(5, 7), 10);
+        }).join(', ');
+    }
+
+    offDaysCalendar.addEventListener('click', function (e) {
+      var date = e.target.dataset && e.target.dataset.date;
+      if (!date) {
+        return;
+      }
+      if (offDays[date]) {
+        delete offDays[date];
+      } else {
+        offDays[date] = true;
+      }
+      renderOffDaysCalendar();
+    });
+
+    offDaysToggle.addEventListener('change', function () {
+      offDaysPicker.hidden = !offDaysToggle.checked;
+      if (offDaysToggle.checked) {
+        renderOffDaysCalendar();
+      }
+    });
+
+    // Off days belong to one month, so picking another month starts the choice again.
+    monthInput.addEventListener('change', function () {
+      offDays = {};
+      if (offDaysToggle.checked) {
+        renderOffDaysCalendar();
+      }
+    });
+
     addMonthForm.addEventListener('submit', function (e) {
       e.preventDefault();
       var monthKey = monthInput.value;
@@ -277,7 +376,8 @@
         addMonthError.hidden = false;
         return;
       }
-      Months.create(monthKey).then(function (month) {
+      var chosenOffDays = offDaysToggle.checked ? Object.keys(offDays).sort() : [];
+      Months.create(monthKey, chosenOffDays).then(function (month) {
         openMonth(month.key);
       }).catch(function (err) {
         addMonthError.textContent = err.message || 'Không tạo được tháng. Vui lòng thử lại.';

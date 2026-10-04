@@ -580,6 +580,15 @@
     function renderFeeResult(data) {
       feeSummary.innerHTML = '';
       feeSummary.appendChild(buildCourtTable(data));
+      if (data.offDays && data.offDays.length) {
+        var offNote = document.createElement('p');
+        offNote.className = 'settle-line off-days-note';
+        offNote.textContent = 'Ngày Off (không tính): ' + data.offDays.map(function (date) {
+          var parts = date.split('-');
+          return parseInt(parts[2], 10) + '/' + parseInt(parts[1], 10);
+        }).join(', ');
+        feeSummary.appendChild(offNote);
+      }
 
       feeBody.innerHTML = '';
       data.members.forEach(function (m) {
