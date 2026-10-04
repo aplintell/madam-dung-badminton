@@ -1481,3 +1481,11 @@ body {
   font-weight: 800;
   white-space: nowrap;
 }
+
+/* Badminton-court picture used in the Kết Ngày summary heading (sized like the emoji beside it) */
+.court-icon {
+  height: 1.7em;
+  width: auto;
+  vertical-align: -0.55em;
+  margin: 0 2px;
+}

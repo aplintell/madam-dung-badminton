@@ -619,6 +619,8 @@
       }
     }
 
+    var COURT_ICON = {}; // marks where the badminton-court picture goes in a summary heading
+
     function calculateSettlement() {
       var shuttlecockPrice = parseFloat(shuttlecockInput.value) || 0;
       var courtPrice = parseFloat(courtInput.value) || 0;
@@ -645,10 +647,21 @@
           summaryTable.appendChild(summaryBody);
           settleSummaryEl.appendChild(summaryTable);
 
+          // shortLabel is text, or an array of text and court-icon pieces.
           function addSummaryLine(shortLabel, shareLabel, amount, shareSeparator) {
             var th = document.createElement('th');
             th.scope = 'col';
-            th.textContent = shortLabel;
+            [].concat(shortLabel).forEach(function (piece) {
+              if (piece === COURT_ICON) {
+                var img = document.createElement('img');
+                img.className = 'court-icon';
+                img.src = 'img/icons/court.svg';
+                img.alt = '';
+                th.appendChild(img);
+              } else {
+                th.appendChild(document.createTextNode(piece));
+              }
+            });
             th.setAttribute('aria-label', shareLabel);
             summaryHeadRow.appendChild(th);
             var td = document.createElement('td');
@@ -657,7 +670,7 @@
             lines.push(shareLabel + shareSeparator + formatMoney(amount) + ' 💵');
           }
 
-          addSummaryLine('🏸/🏟️/💧', 'Cầu + Sân + Nước', data.totalPrice, ' = '); // shuttlecock / court / water
+          addSummaryLine(['🏸/', COURT_ICON, '/💧'], 'Cầu + Sân + Nước', data.totalPrice, ' = '); // shuttlecock / court / water
           addSummaryLine('Thu VL', 'Đã Thu Vãng Lai', data.guestPaidTotal, ' = ');
           addSummaryLine('Phát Sinh', 'Phát Sinh', data.extraCost, ' = ');
           addSummaryLine('Độ/Set', 'Nước Độ / Set', data.waterRate, ': ');
