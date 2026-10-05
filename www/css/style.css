@@ -1036,7 +1036,7 @@ body {
 /* End Day players table: Lose / Win / Tổng columns, header and values in the same colour */
 #endDayResult > .settle-table thead th:nth-child(3),
 #endDayResult > .settle-table tbody td:nth-child(3) {
-  color: #ff7f7f; /* Light Red */
+  color: var(--lose); /* same red as the losing team in the Game List */
 }
 
 #endDayResult > .settle-table thead th:nth-child(4),
