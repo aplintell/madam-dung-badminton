@@ -662,6 +662,8 @@
     /**
      * Adds a member to the month, or updates memberId when given. The name is matched to an
      * existing player (or creates one), so a member is the same person as in the game list.
+     * Editing a member to a name no other player has renames that player, so the new name
+     * shows everywhere they appear (earlier sets, other months), not just on this member.
      */
     save: function (monthKey, rawName, weekdays, memberId) {
       var name = normalizeName(rawName);
@@ -674,7 +676,18 @@
       if (days.length === 0) {
         return Promise.reject(new Error('Vui lòng chọn ít nhất 1 ngày'));
       }
-      return Players.findOrCreate(name).then(function (player) {
+      var findPlayer = memberId === undefined ? Players.findOrCreate(name) : Promise.all([
+        Db.get('members', memberId),
+        Db.getAllByIndex('players', 'nameLower', name.toLowerCase())
+      ]).then(function (results) {
+        var current = results[0];
+        var namedLikeThis = results[1][0];
+        if (current && (!namedLikeThis || namedLikeThis.id === current.playerId)) {
+          return Players.rename(current.playerId, name);
+        }
+        return Players.findOrCreate(name);
+      });
+      return findPlayer.then(function (player) {
         return Db.getAllByIndex('members', 'monthKey', monthKey).then(function (members) {
           var duplicate = members.some(function (m) {
             return m.playerId === player.id && m.id !== memberId;
