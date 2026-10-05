@@ -1027,7 +1027,13 @@ body {
   min-width: 0;
 }
 
-/* End Day table: Thua / Thắng / Tổng headers take the colour of their column's values */
+/* End Day table headers are written as they should look ("Tên", "Lose", "Win", "Tổng"),
+   not all capitals like other tables */
+#endDayResult .settle-table thead th {
+  text-transform: none;
+}
+
+/* End Day table: Lose / Win / Tổng headers take the colour of their column's values */
 #endDayResult .settle-table thead th:nth-child(3),
 #endDayResult .settle-table thead th:nth-child(4) {
   color: #00ccff; /* Vivid Sky Blue */
