@@ -96,7 +96,7 @@
               <th scope="col" class="col-num" aria-label="Tiền Cầu">💵</th>
               <th scope="col" class="col-num">Lose</th>
               <th scope="col" class="col-num">Win</th>
-              <th scope="col" class="col-num">💧</th>
+              <th scope="col" class="col-num" aria-label="Nước Độ"><img class="water-icon" src="img/icons/water-bottle.png" alt=""></th>
               <th scope="col" class="col-num col-total">Tổng</th>
             </tr>
           </thead>
@@ -708,9 +708,9 @@
           }
 
           settleBodyEl.innerHTML = '';
-          // TV Vãng Lai come first (see Settlement.settle) and are marked "- VL".
+          // TV Vãng Lai come first (see Settlement.settle) and are marked "- vl".
           data.players.forEach(function (p) {
-            var name = p.isMember ? p.name : p.name + ' - VL';
+            var name = p.isMember ? p.name : p.name + ' - vl';
             var nameLine = name + ' : ' + p.gamesLost + ' Thua - ' + p.gamesWon + ' Thắng';
             var amountLine = formatMoney(p.courtShare) + '💰 ' + (p.waterShare < 0 ? '- ' : '+ ')
               + formatMoney(Math.abs(p.waterShare)) + '💧' + ' = ' + formatMoney(p.amount) + '💵';
