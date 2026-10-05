@@ -1,9 +1,9 @@
 (function (global) {
   // Game list rows show the winning team on the left and the losing team on the right. A row is
-  // rearranged only 30 seconds after its result was last changed, so a team doesn't jump away
+  // rearranged only 15 seconds after its result was last changed, so a team doesn't jump away
   // straight after being tapped (and tapping again to undo still hits the same spot). Only the
   // display moves: the saved teams stay as they are, and each team keeps its data-team number.
-  var DELAY_MS = 30000;
+  var DELAY_MS = 15000;
 
   function teamsOf(content) {
     return content.querySelectorAll('.team');
@@ -36,7 +36,7 @@
 
   global.WinnerLeft = {
     /**
-     * Schedules the row's rearrangement for 30s after changedAt (an ISO time; missing or invalid
+     * Schedules the row's rearrangement for 15s after changedAt (an ISO time; missing or invalid
      * means long ago, so it happens straight away). Replaces any earlier schedule for the row.
      */
     schedule: function (row, changedAt) {

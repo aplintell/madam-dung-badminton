@@ -88,8 +88,8 @@
     function loadDays() {
       GameDays.findForMonth(monthKey).then(function (days) {
         return Promise.all(days.map(function (day) {
-          return GameDays.playableToday(day.id).then(function (players) {
-            return { day: day, playerCount: players.length };
+          return Promise.all([GameDays.playableToday(day.id), Games.findAllForDay(day.id)]).then(function (results) {
+            return { day: day, playerCount: results[0].length, setCount: results[1].length };
           });
         }));
       }).then(function (summaries) {
@@ -102,7 +102,7 @@
         emptyStateEl.hidden = true;
         dayListEl.hidden = false;
         summaries.forEach(function (s) {
-          var row = buildDayRow(s.day, s.playerCount);
+          var row = buildDayRow(s.day, s.playerCount, s.setCount);
           dayListEl.appendChild(row);
           bindDaySwipe(row);
         });
@@ -116,8 +116,8 @@
       document.getElementById('pageLoading').hidden = true;
     }
 
-    // playerCount: today's TV Cố Định (Chơi) + TV Vãng Lai.
-    function buildDayRow(day, playerCount) {
+    // playerCount: today's TV Cố Định (Chơi) + TV Vãng Lai; setCount: the day's sets (not deleted).
+    function buildDayRow(day, playerCount, setCount) {
       var row = document.createElement('div');
       row.className = 'day-row';
       row.setAttribute('data-day-id', String(day.id));
@@ -138,7 +138,7 @@
 
       var metaEl = document.createElement('div');
       metaEl.className = 'day-meta';
-      metaEl.textContent = formatDateMeta(day.date) + ' • ' + playerCount + ' Lông Thủ';
+      metaEl.textContent = formatDateMeta(day.date) + ' • ' + playerCount + ' Lông Thủ • ' + setCount + ' Set';
 
       a.appendChild(dateEl);
       a.appendChild(metaEl);

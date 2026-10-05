@@ -178,7 +178,6 @@
 
       sharePlayerLinkBtn.hidden = false;
       sharePlayerLinkBtn.addEventListener('click', function () {
-        var dayName = document.getElementById('dayTitle').textContent;
         var url = window.location.href.split('#')[0].split('?')[0].replace(/[^/]*$/, '') + 'player-day.html?id=' + dayId;
         var text = '🏸 Danh sách Set ' + dayName + '\n' + url;
         if (sharePassword) {
@@ -334,6 +333,7 @@
             var newRow = buildGameRowElement(newGame);
             gameListEl.insertBefore(newRow, gameListEl.firstChild);
             bindGameRow(newRow);
+            updateSetCount();
           })
           .catch(function () {
             alert('Could not duplicate the game. Check your connection and try again.');
@@ -447,6 +447,7 @@
             undoDeleteBtn.hidden = false;
             setTimeout(function () {
               row.remove();
+              updateSetCount();
               if (!gameListEl.querySelector('.game-row')) {
                 window.location.reload();
               }
@@ -462,10 +463,24 @@
 
     var titleEl = document.getElementById('dayTitle');
     var titleInput = document.getElementById('dayTitleInput');
+
+    // The header shows the day's name and how many sets are in the list, e.g.
+    // "Thứ 2, 5/10/2026 - 18 Set". dayName is the name alone (used for renaming and sharing).
+    var dayName = '';
+    var setCount = null;
+
+    function renderTitle() {
+      titleEl.textContent = setCount === null ? dayName : dayName + ' - ' + setCount + ' Set';
+    }
+
+    function updateSetCount() {
+      setCount = gameListEl.querySelectorAll('.game-row').length;
+      renderTitle();
+    }
     var renameBtn = document.getElementById('renameBtn');
 
     function enterEditMode() {
-      titleInput.value = titleEl.textContent;
+      titleInput.value = dayName;
       titleEl.hidden = true;
       titleInput.hidden = false;
       titleInput.focus();
@@ -476,7 +491,7 @@
       var newName = titleInput.value.trim();
       titleInput.hidden = true;
       titleEl.hidden = false;
-      if (!newName || newName === titleEl.textContent) {
+      if (!newName || newName === dayName) {
         return;
       }
       GameDays.getOrThrow(dayId)
@@ -484,7 +499,8 @@
           return GameDays.rename(day, newName);
         })
         .then(function (day) {
-          titleEl.textContent = day.name;
+          dayName = day.name;
+          renderTitle();
         })
         .catch(function () {
           alert('Could not save the name. Check your connection and try again.');
@@ -526,7 +542,7 @@
     }
 
     function openEndDayModal() {
-      endDayTitleEl.textContent = titleEl.textContent;
+      endDayTitleEl.textContent = dayName;
       endDayError.hidden = true;
       endDayForm.hidden = false;
       endDayResult.hidden = true;
@@ -692,9 +708,9 @@
           }
 
           settleBodyEl.innerHTML = '';
-          // TV Vãng Lai come first (see Settlement.settle) and are marked "(VL)".
+          // TV Vãng Lai come first (see Settlement.settle) and are marked "- VL".
           data.players.forEach(function (p) {
-            var name = p.isMember ? p.name : p.name + ' (VL)';
+            var name = p.isMember ? p.name : p.name + ' - VL';
             var nameLine = name + ' : ' + p.gamesLost + ' Thua - ' + p.gamesWon + ' Thắng';
             var amountLine = formatMoney(p.courtShare) + '💰 ' + (p.waterShare < 0 ? '- ' : '+ ')
               + formatMoney(Math.abs(p.waterShare)) + '💧' + ' = ' + formatMoney(p.amount) + '💵';
@@ -709,7 +725,7 @@
             settleBodyEl.appendChild(tr);
             lines.push(nameLine, amountLine);
           });
-          shareText = titleEl.textContent + '\n' + lines.join('\n');
+          shareText = dayName + '\n' + lines.join('\n');
           endDayForm.hidden = true;
           endDayResult.hidden = false;
           // Get the payment QR into the share cache now so Share has less to do later.
@@ -766,7 +782,7 @@
 
     shareEndDayBtn.addEventListener('click', function () {
       if (typeof html2canvas !== 'function') {
-        ShareImage.shareText(titleEl.textContent, shareText);
+        ShareImage.shareText(dayName, shareText);
         return;
       }
 
@@ -782,7 +798,7 @@
     // Images are rendered one after another rather than in parallel so a long game list
     // and the settlement card never hold full-size canvases in memory at the same time.
     function captureAndShare() {
-      var title = titleEl.textContent;
+      var title = dayName;
       captureSettlementCard()
         .then(function (cardBlob) {
           if (!cardBlob) {
@@ -814,7 +830,7 @@
 
       var header = document.createElement('div');
       header.className = 'share-game-header';
-      header.textContent = titleEl.textContent + ' · ' + rowCount + ' Set';
+      header.textContent = dayName + ' · ' + rowCount + ' Set';
       gameListEl.insertBefore(header, gameListEl.firstChild);
 
       function removeHeader() {
@@ -859,12 +875,14 @@
           bindGameRow(row);
         });
       }
+      updateSetCount();
     }
 
     function loadDay() {
       GameDays.getOrThrow(dayId)
         .then(function (day) {
-          titleEl.textContent = day.name;
+          dayName = day.name;
+          renderTitle();
           document.getElementById('backLink').setAttribute('href', 'days.html?month=' + Months.keyOfDate(day.date));
           fillPrices(day.prices);
           return loadPlayerNames();
