@@ -1033,14 +1033,20 @@ body {
   text-transform: none;
 }
 
-/* End Day table: Lose / Win / Tổng headers take the colour of their column's values */
-#endDayResult .settle-table thead th:nth-child(3),
-#endDayResult .settle-table thead th:nth-child(4) {
-  color: #00ccff; /* Vivid Sky Blue */
+/* End Day players table: Lose / Win / Tổng columns, header and values in the same colour */
+#endDayResult > .settle-table thead th:nth-child(3),
+#endDayResult > .settle-table tbody td:nth-child(3) {
+  color: #ff7f7f; /* Light Red */
 }
 
-#endDayResult .settle-table thead th:nth-child(6) {
-  color: #00ff7f; /* Spring Green */
+#endDayResult > .settle-table thead th:nth-child(4),
+#endDayResult > .settle-table tbody td:nth-child(4) {
+  color: #90ee90; /* Light Green */
+}
+
+#endDayResult > .settle-table thead th:nth-child(6),
+#endDayResult > .settle-table tbody td:nth-child(6) {
+  color: #ffb6c1; /* Light Pink */
 }
 
 /* Thêm Set: player boxes are pick-only (tap to choose from today's roster) */
