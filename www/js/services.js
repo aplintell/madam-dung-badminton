@@ -868,8 +868,10 @@
       });
     },
 
+    /** Records the result; winnerSetAt is when, so lists can move the winner to the left later. */
     setWinner: function (game, winningTeam) {
       game.winningTeam = winningTeam;
+      game.winnerSetAt = new Date().toISOString();
       return Db.put('games', game).then(function () {
         return game;
       });
@@ -1026,7 +1028,11 @@
               amount: courtShare + waterShare
             };
           });
+          // TV Vãng Lai first, then TV Cố Định; highest amount first within each group.
           shares.sort(function (x, y) {
+            if (x.isMember !== y.isMember) {
+              return x.isMember ? 1 : -1;
+            }
             if (y.amount !== x.amount) {
               return y.amount - x.amount;
             }
@@ -1034,6 +1040,9 @@
           });
 
           return {
+            shuttlecockPrice: shuttlecockPrice,
+            courtPrice: courtPrice,
+            waterPrice: waterPrice,
             totalPrice: total,
             gameCount: games.length,
             memberCount: memberIds.length,

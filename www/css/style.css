@@ -1451,24 +1451,24 @@ body {
   white-space: nowrap;
 }
 
-/* Kết Ngày / Tính Tiền heading area: 4 columns (Cầu/Sân/Nước | Thu VL | Phát Sinh | Độ/Set),
+/* Kết Ngày / Tính Tiền heading area: 6 columns (Cầu | Sân | Nước | Thu VL | Phát Sinh | Độ/Set),
    labels on top and the amounts underneath, centred */
 #endDayModal .summary-table {
   margin: 0;
-  font-size: 0.83rem;
-  table-layout: fixed;
+  font-size: 0.8rem;
+  table-layout: auto;
 }
 
 #endDayModal .summary-table thead th,
 #endDayModal .summary-table tbody td {
   text-align: center;
-  padding-left: 4px;
-  padding-right: 4px;
+  padding-left: 3px;
+  padding-right: 3px;
 }
 
 #endDayModal .summary-table thead th {
   text-transform: none;
-  white-space: nowrap;
+  line-height: 1.2;
 }
 
 /* The players table colours some heading columns; the summary's headings stay plain grey. */

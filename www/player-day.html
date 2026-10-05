@@ -49,6 +49,7 @@
   <script src="js/db.js"></script>
   <script src="js/services.js"></script>
   <script src="js/touch-guard.js"></script>
+  <script src="js/winner-left.js"></script>
   <script>
     var dayId = parseInt(new URLSearchParams(window.location.search).get('id'), 10);
 
@@ -165,6 +166,7 @@
       content.appendChild(buildTeamElement(2, playerNameById[game.team2Player1Id], playerNameById[game.team2Player2Id], game.winningTeam));
 
       row.appendChild(content);
+      WinnerLeft.schedule(row, game.winnerSetAt);
       return row;
     }
 
@@ -188,6 +190,7 @@
               t.classList.add(teamNumber === newWinningTeam ? 'winner' : 'loser');
             }
           });
+          WinnerLeft.schedule(row, new Date().toISOString());
           Games.getOrThrow(game.id)
             .then(function (fresh) {
               return Games.setWinner(fresh, newWinningTeam);

@@ -21,6 +21,7 @@ var FILES = [
   'js/html2canvas.min.js',
   'js/pwa.js',
   'js/touch-guard.js',
+  'js/winner-left.js',
   'js/version.js',
   'js/firebase-config.js',
   'js/cloud.js',

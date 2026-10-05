@@ -155,6 +155,7 @@
   <script src="js/db.js"></script>
   <script src="js/services.js"></script>
   <script src="js/touch-guard.js"></script>
+  <script src="js/winner-left.js"></script>
   <script src="js/back-button.js"></script>
   <script src="js/player-suggest.js"></script>
   <script src="js/share-image.js"></script>
@@ -273,6 +274,7 @@
       content.appendChild(buildTeamElement(2, playerNameById[game.team2Player1Id], playerNameById[game.team2Player2Id], game.winningTeam));
 
       row.appendChild(content);
+      WinnerLeft.schedule(row, game.winnerSetAt);
       return row;
     }
 
@@ -302,7 +304,8 @@
             .then(function (game) {
               return Games.setWinner(game, newWinningTeam);
             })
-            .then(function () {
+            .then(function (game) {
+              WinnerLeft.schedule(row, game.winnerSetAt);
               var teams = row.querySelectorAll('.team');
               teams.forEach(function (t) {
                 t.classList.remove('winner', 'loser');
@@ -637,7 +640,7 @@
           settleSummaryEl.innerHTML = '';
           var lines = [];
 
-          // The heading area is a 4-column table above the players table: short labels on top,
+          // The heading area is a 6-column table above the players table: short labels on top,
           // the amounts underneath. The text version for sharing keeps the full wording.
           var summaryTable = document.createElement('table');
           summaryTable.className = 'settle-table summary-table';
@@ -674,7 +677,9 @@
             lines.push(shareLabel + shareSeparator + formatMoney(amount) + ' 💵');
           }
 
-          addSummaryLine([SHUTTLECOCK_ICON, COURT_ICON, WATER_ICON], 'Cầu + Sân + Nước', data.totalPrice, ' = '); // shuttlecock / court / water
+          addSummaryLine([SHUTTLECOCK_ICON], 'Cầu', data.shuttlecockPrice, ' = ');
+          addSummaryLine([COURT_ICON], 'Sân', data.courtPrice, ' = ');
+          addSummaryLine([WATER_ICON], 'Nước', data.waterPrice, ' = ');
           addSummaryLine('Thu VL', 'Đã Thu Vãng Lai', data.guestPaidTotal, ' = ');
           addSummaryLine('Phát Sinh', 'Phát Sinh', data.extraCost, ' = ');
           addSummaryLine('Độ/Set', 'Nước Độ / Set', data.waterRate, ': ');
@@ -687,12 +692,14 @@
           }
 
           settleBodyEl.innerHTML = '';
+          // TV Vãng Lai come first (see Settlement.settle) and are marked "(VL)".
           data.players.forEach(function (p) {
-            var nameLine = p.name + ' : ' + p.gamesLost + ' Thua - ' + p.gamesWon + ' Thắng';
+            var name = p.isMember ? p.name : p.name + ' (VL)';
+            var nameLine = name + ' : ' + p.gamesLost + ' Thua - ' + p.gamesWon + ' Thắng';
             var amountLine = formatMoney(p.courtShare) + '💰 ' + (p.waterShare < 0 ? '- ' : '+ ')
               + formatMoney(Math.abs(p.waterShare)) + '💧' + ' = ' + formatMoney(p.amount) + '💵';
             var tr = document.createElement('tr');
-            addCell(tr, 'th', 'col-name', p.name);
+            addCell(tr, 'th', 'col-name', name);
             tr.firstChild.setAttribute('scope', 'row');
             addCell(tr, 'td', 'col-num', formatMoney(p.courtShare));
             addCell(tr, 'td', 'col-num', String(p.gamesLost));
