@@ -94,8 +94,8 @@
             <tr>
               <th scope="col" class="col-name">Tên</th>
               <th scope="col" class="col-num" aria-label="Tiền Cầu">💵</th>
-              <th scope="col" class="col-num">Lose</th>
               <th scope="col" class="col-num">Win</th>
+              <th scope="col" class="col-num">Lose</th>
               <th scope="col" class="col-num" aria-label="Nước Độ"><img class="water-icon" src="img/icons/water-bottle.png" alt=""></th>
               <th scope="col" class="col-num col-total">Tổng</th>
             </tr>
@@ -718,8 +718,8 @@
             addCell(tr, 'th', 'col-name', name);
             tr.firstChild.setAttribute('scope', 'row');
             addCell(tr, 'td', 'col-num', formatMoney(p.courtShare));
-            addCell(tr, 'td', 'col-num', String(p.gamesLost));
             addCell(tr, 'td', 'col-num', String(p.gamesWon));
+            addCell(tr, 'td', 'col-num', String(p.gamesLost));
             addCell(tr, 'td', 'col-num', formatMoney(p.waterShare));
             addCell(tr, 'td', 'col-num col-total', formatMoney(p.amount));
             settleBodyEl.appendChild(tr);

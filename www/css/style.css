@@ -1027,20 +1027,20 @@ body {
   min-width: 0;
 }
 
-/* End Day table headers are written as they should look ("Tên", "Lose", "Win", "Tổng"),
+/* End Day table headers are written as they should look ("Tên", "Win", "Lose", "Tổng"),
    not all capitals like other tables */
 #endDayResult .settle-table thead th {
   text-transform: none;
 }
 
-/* End Day players table: Lose / Win / Tổng columns, header and values in the same colour */
-#endDayResult > .settle-table thead th:nth-child(3),
-#endDayResult > .settle-table tbody td:nth-child(3) {
+/* End Day players table: Win / Lose / Tổng columns, header and values in the same colour */
+#endDayResult > .settle-table thead th:nth-child(4),
+#endDayResult > .settle-table tbody td:nth-child(4) {
   color: var(--lose); /* same red as the losing team in the Game List */
 }
 
-#endDayResult > .settle-table thead th:nth-child(4),
-#endDayResult > .settle-table tbody td:nth-child(4) {
+#endDayResult > .settle-table thead th:nth-child(3),
+#endDayResult > .settle-table tbody td:nth-child(3) {
   color: #90ee90; /* Light Green */
 }
 
