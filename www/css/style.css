@@ -1046,7 +1046,7 @@ body {
 
 #endDayResult > .settle-table thead th:nth-child(6),
 #endDayResult > .settle-table tbody td:nth-child(6) {
-  color: #ffb6c1; /* Light Pink */
+  color: #fd6c9e; /* French Pink */
 }
 
 /* Thêm Set: player boxes are pick-only (tap to choose from today's roster) */
