@@ -893,6 +893,28 @@ body {
   background: var(--surface);
 }
 
+/* Day view: dropdown under the roster buttons that shows only one player's sets */
+.player-filter {
+  display: block;
+  width: 100%;
+  margin: -6px 0 16px;
+  padding: 12px 14px;
+  font-size: 1rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  color: var(--text);
+}
+
+.player-filter:focus {
+  outline: 2px solid var(--accent);
+}
+
+.player-filter[hidden],
+.game-row[hidden] {
+  display: none;
+}
+
 .roster-list {
   display: flex;
   flex-direction: column;

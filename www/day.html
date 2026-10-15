@@ -30,6 +30,10 @@
       <button id="guestsBtn" class="secondary-button roster-button" type="button">TV Vãng Lai</button>
     </div>
 
+    <select id="playerFilter" class="player-filter" aria-label="Lọc Set theo Lông Thủ" hidden>
+      <option value="">Tất Cả Set</option>
+    </select>
+
     <div id="pageLoading" class="page-loading" role="status" aria-live="polite">
       <div class="loading-spinner" aria-hidden="true"></div>
       <p>Đang tải...</p>
@@ -41,6 +45,8 @@
     </div>
 
     <div id="gameList" class="game-list" hidden></div>
+
+    <p id="filterEmpty" class="empty-state" hidden></p>
 
     <p id="gameHint" class="game-hint" hidden>Bấm vào đội Thắng, Bấm lại là hủy</p>
   </main>
@@ -193,6 +199,7 @@
     var undoDeleteBtn = document.getElementById('undoDeleteBtn');
 
     var playerNameById = {};
+    var playerNamesLoaded = false;
 
     function loadPlayerNames() {
       return Players.findAll().then(function (players) {
@@ -200,6 +207,7 @@
         players.forEach(function (p) {
           playerNameById[p.id] = p.name;
         });
+        playerNamesLoaded = true;
       });
     }
 
@@ -245,6 +253,7 @@
       var row = document.createElement('div');
       row.className = 'game-row';
       row.setAttribute('data-game-id', String(game.id));
+      row.setAttribute('data-player-ids', [game.team1Player1Id, game.team1Player2Id, game.team2Player1Id, game.team2Player2Id].join(','));
 
       var bg = document.createElement('div');
       bg.className = 'game-row-bg';
@@ -334,6 +343,7 @@
             gameListEl.insertBefore(newRow, gameListEl.firstChild);
             bindGameRow(newRow);
             updateSetCount();
+            applyPlayerFilter();
           })
           .catch(function () {
             alert('Could not duplicate the game. Check your connection and try again.');
@@ -448,6 +458,7 @@
             setTimeout(function () {
               row.remove();
               updateSetCount();
+              applyPlayerFilter();
               if (!gameListEl.querySelector('.game-row')) {
                 window.location.reload();
               }
@@ -828,6 +839,9 @@
         return Promise.resolve(null);
       }
 
+      // The shared image always holds every set of the day, whatever the filter shows.
+      showAllRows();
+
       var header = document.createElement('div');
       header.className = 'share-game-header';
       header.textContent = dayName + ' · ' + rowCount + ' Set';
@@ -837,6 +851,7 @@
         if (header.parentNode) {
           header.parentNode.removeChild(header);
         }
+        applyPlayerFilter();
       }
 
       var fullHeight = gameListEl.scrollHeight;
@@ -876,7 +891,101 @@
         });
       }
       updateSetCount();
+      applyPlayerFilter();
     }
+
+    // ---- Player filter ----
+    // The dropdown under the roster buttons shows only the sets one player took part in. It lists
+    // everyone in today's sets plus today's TV Cố Định (Chơi) and TV Vãng Lai, each with how many
+    // sets they've played. The choice is kept for this day while going to Add Set and back.
+
+    var playerFilterEl = document.getElementById('playerFilter');
+    var filterEmptyEl = document.getElementById('filterEmpty');
+    var FILTER_STORAGE_KEY = 'badminton-player-filter-' + dayId;
+    var rosterPlayerIds = [];
+    var selectedPlayerId = '';
+    try {
+      selectedPlayerId = sessionStorage.getItem(FILTER_STORAGE_KEY) || '';
+    } catch (err) {
+      // ignore storage errors (e.g. private browsing)
+    }
+
+    function rowPlayerIds(row) {
+      return (row.getAttribute('data-player-ids') || '').split(',');
+    }
+
+    function showAllRows() {
+      gameListEl.querySelectorAll('.game-row').forEach(function (row) {
+        row.hidden = false;
+      });
+    }
+
+    function rebuildFilterOptions(rows) {
+      var setCounts = {};
+      rosterPlayerIds.concat(selectedPlayerId ? [selectedPlayerId] : []).forEach(function (id) {
+        setCounts[id] = 0;
+      });
+      rows.forEach(function (row) {
+        rowPlayerIds(row).forEach(function (id) {
+          setCounts[id] = (setCounts[id] || 0) + 1;
+        });
+      });
+      var ids = Object.keys(setCounts).filter(function (id) {
+        return playerNameById[id] !== undefined;
+      }).sort(function (a, b) {
+        return playerNameById[a].localeCompare(playerNameById[b], 'vi');
+      });
+
+      playerFilterEl.innerHTML = '';
+      var all = document.createElement('option');
+      all.value = '';
+      all.textContent = 'Tất Cả Set';
+      playerFilterEl.appendChild(all);
+      ids.forEach(function (id) {
+        var option = document.createElement('option');
+        option.value = id;
+        option.textContent = playerNameById[id] + ' (' + setCounts[id] + ' Set)';
+        playerFilterEl.appendChild(option);
+      });
+      if (ids.indexOf(selectedPlayerId) === -1) {
+        selectedPlayerId = '';
+      }
+      playerFilterEl.value = selectedPlayerId;
+      playerFilterEl.hidden = ids.length === 0;
+    }
+
+    function applyPlayerFilter() {
+      if (!playerNamesLoaded) {
+        return; // the game list draws once the names are in, and filters then
+      }
+      var rows = Array.prototype.slice.call(gameListEl.querySelectorAll('.game-row'));
+      rebuildFilterOptions(rows);
+      var shown = 0;
+      rows.forEach(function (row) {
+        var match = !selectedPlayerId || rowPlayerIds(row).indexOf(selectedPlayerId) !== -1;
+        row.hidden = !match;
+        if (match) {
+          shown++;
+        }
+      });
+      var nothingForPlayer = rows.length > 0 && shown === 0;
+      filterEmptyEl.textContent = nothingForPlayer ? playerNameById[selectedPlayerId] + ' chưa chơi Set nào.' : '';
+      filterEmptyEl.hidden = !nothingForPlayer;
+      if (rows.length > 0) {
+        gameListEl.hidden = nothingForPlayer;
+      }
+    }
+
+    playerFilterEl.addEventListener('change', function () {
+      selectedPlayerId = playerFilterEl.value;
+      try {
+        sessionStorage.setItem(FILTER_STORAGE_KEY, selectedPlayerId);
+      } catch (err) {
+        // ignore storage errors (e.g. private browsing)
+      }
+      applyPlayerFilter();
+      window.scrollTo(0, 0);
+    });
 
     function loadDay() {
       GameDays.getOrThrow(dayId)
@@ -947,6 +1056,12 @@
     function refreshRoster() {
       return GameDays.roster(dayId).then(function (roster) {
         updateRosterButtons(roster);
+        rosterPlayerIds = roster.members.filter(function (m) {
+          return m.playing;
+        }).concat(roster.guests).map(function (p) {
+          return String(p.playerId);
+        });
+        applyPlayerFilter();
         return roster;
       });
     }
