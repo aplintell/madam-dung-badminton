@@ -902,7 +902,7 @@ body {
   font-size: 1rem;
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: 12px;
   color: var(--text);
 }
 
@@ -1296,10 +1296,20 @@ body {
   font-size: 0.945rem;
 }
 
-.game-list-page .roster-button {
+.game-list-page .roster-button,
+.game-list-page .player-filter {
   font-size: 0.75rem;
   padding-top: 11px;
   padding-bottom: 11px;
+}
+
+/* Same text weight and height as the roster buttons above it (a select adds its own inner
+   padding, so the height is set outright and the select centres the text itself) */
+.game-list-page .player-filter {
+  font-weight: 600;
+  height: 38px;
+  padding-top: 0;
+  padding-bottom: 0;
 }
 
 .game-list-page .empty-state {
