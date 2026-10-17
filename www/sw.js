@@ -29,9 +29,11 @@ var FILES = [
   'js/vendor/firebase-auth-compat.js',
   'js/vendor/firebase-firestore-compat.js',
   'img/payment-qr.jpg',
+  'img/icons/icon-32.png',
   'img/icons/icon-180.png',
   'img/icons/icon-192.png',
   'img/icons/icon-512.png',
+  'img/icons/icon-maskable-512.png',
   'img/icons/court.png',
   'img/icons/shuttlecock.png',
   'img/icons/water-bottle.png'
